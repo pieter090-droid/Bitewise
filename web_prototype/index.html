@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0D1B2A" />
+<title>Bitewise — prototype</title>
+<style>
+  :root{
+    --navy:#0D1B2A; --navy400:#3B5470; --gold:#C9A84C; --slate:#5B6B7B;
+    --mist:#EDF1F5; --surface:#FAFBFC; --white:#fff; --danger:#C65B54;
+    --protein:#4B8FB3; --sugar:#C65B54; --success:#3E9E6B;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--surface); color:var(--navy);
+    display:flex; justify-content:center;
+  }
+  .app{width:100%;max-width:440px;min-height:100vh;background:var(--surface);
+    display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .scroll{flex:1;overflow-y:auto;padding:16px 16px 96px;-webkit-overflow-scrolling:touch}
+  h1,h2,h3{margin:0;letter-spacing:-.3px}
+  .muted{color:var(--slate)}
+  .card{background:var(--white);border:1px solid var(--mist);border-radius:18px;padding:18px;margin-bottom:14px}
+  .appbar{padding:16px;display:flex;align-items:center;justify-content:space-between}
+  .appbar h1{font-size:22px;font-weight:800}
+  .btn{border:0;border-radius:14px;padding:16px;font-size:16px;font-weight:700;width:100%;cursor:pointer}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-gold{background:var(--gold);color:var(--navy)}
+  .btn-ghost{background:transparent;border:1.5px solid var(--navy);color:var(--navy)}
+  .row{display:flex;align-items:center;gap:12px}
+  .space{display:flex;align-items:center;justify-content:space-between}
+  .chip{display:inline-block;padding:8px 14px;border-radius:30px;background:var(--mist);
+    color:var(--navy);font-weight:600;font-size:13px;border:0;cursor:pointer;margin:0 6px 8px 0}
+  .chip.sel{background:var(--navy);color:#fff}
+  .tag{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;margin-right:6px}
+  .screen{display:none}
+  .screen.active{display:block}
+
+  /* bottom nav */
+  .nav{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--mist);
+    display:flex;justify-content:space-around;padding:10px 4px 14px}
+  .nav button{background:0;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;
+    color:var(--slate);font-size:11px;font-weight:600;cursor:pointer;flex:1}
+  .nav button.on{color:var(--navy)}
+  .nav .ic{font-size:22px}
+
+  /* ring */
+  .ring-wrap{display:flex;align-items:center;gap:18px}
+  .ring{position:relative;width:128px;height:128px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .val{font-size:26px;font-weight:800}
+  .ring .unit{font-size:12px;color:var(--slate);font-weight:700}
+
+  /* macro bar */
+  .bar{height:10px;background:var(--mist);border-radius:8px;overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;border-radius:8px}
+
+  /* week chart */
+  .week{display:flex;align-items:flex-end;gap:8px;height:120px}
+  .week .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+  .week .barv{width:100%;border-radius:6px 6px 0 0;background:var(--navy400);min-height:4px}
+  .week .barv.today{background:var(--gold)}
+  .week .barv.over{background:var(--danger)}
+  .wklabels{display:flex;gap:8px;margin-top:6px}
+  .wklabels span{flex:1;text-align:center;font-size:11px;color:var(--slate)}
+
+  .meal{padding:12px 16px}
+  .logitem{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mist)}
+  .thumb{border:0;background:var(--mist);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:16px}
+  .thumb.on{background:var(--navy);color:#fff}
+  .score{background:rgba(201,168,76,.18);color:var(--navy);font-weight:800;font-size:12px;padding:6px 10px;border-radius:12px}
+  .hl{background:rgba(62,158,107,.12);color:var(--success);font-weight:700;font-size:12px;padding:6px 10px;border-radius:10px;margin:4px 6px 0 0;display:inline-block}
+  input[type=range]{width:100%;accent-color:var(--navy)}
+  .switch{width:48px;height:28px;border-radius:20px;background:var(--mist);position:relative;cursor:pointer;flex:none}
+  .switch.on{background:var(--gold)}
+  .switch i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.15s}
+  .switch.on i{left:23px}
+  .thumbimg{width:56px;height:56px;border-radius:14px;background:var(--mist);display:flex;align-items:center;justify-content:center;font-size:24px;flex:none}
+
+  /* overlay onboarding */
+  .overlay{position:absolute;inset:0;background:var(--surface);z-index:20;display:flex;flex-direction:column;padding:20px}
+  .dots{display:flex;gap:6px}
+  .dots i{width:8px;height:8px;border-radius:4px;background:var(--mist)}
+  .dots i.on{width:22px;background:var(--gold)}
+  .goalcard{border:2px solid var(--mist);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer}
+  .goalcard.sel{border-color:var(--gold)}
+  .toast{position:absolute;bottom:96px;left:16px;right:16px;background:var(--navy);color:#fff;
+    padding:14px 16px;border-radius:12px;text-align:center;opacity:0;transition:.25s;z-index:30;font-weight:600}
+  .toast.show{opacity:1}
+  .scanframe{height:300px;border-radius:20px;background:var(--navy);display:flex;align-items:center;justify-content:center;position:relative}
+  .scanframe .box{width:220px;height:150px;border:3px solid var(--gold);border-radius:16px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ ONBOARDING OVERLAY ============ -->
+  <div class="overlay" id="onboarding">
+    <div class="space" style="margin-bottom:20px">
+      <h1 style="font-size:20px;font-weight:800">Bitewise</h1>
+      <div class="dots"><i class="on" id="d0"></i><i id="d1"></i></div>
+    </div>
+    <div id="ob0" style="flex:1;overflow:auto">
+      <h2 style="font-size:24px;margin-bottom:4px">Wat is je doel?</h2>
+      <p class="muted" style="margin-top:0">We stemmen je dag en swaps hierop af.</p>
+      <div class="goalcard sel" data-goal="Afvallen" data-kcal="1800" data-prot="110" data-sugar="40" onclick="pickGoal(this)">
+        <b>Afvallen</b><div class="muted">Kleiner calorieoverschot, meer verzadiging.</div></div>
+      <div class="goalcard" data-goal="Op gewicht blijven" data-kcal="2200" data-prot="90" data-sugar="50" onclick="pickGoal(this)">
+        <b>Op gewicht blijven</b><div class="muted">Balans houden met bewuste keuzes.</div></div>
+      <div class="goalcard" data-goal="Spieropbouw" data-kcal="2600" data-prot="150" data-sugar="55" onclick="pickGoal(this)">
+        <b>Spieropbouw</b><div class="muted">Hoger eiwit, voldoende energie.</div></div>
+      <div class="goalcard" data-goal="Minder suiker" data-kcal="2000" data-prot="100" data-sugar="25" onclick="pickGoal(this)">
+        <b>Minder suiker</b><div class="muted">Suikerpieken vermijden, stabiele energie.</div></div>
+    </div>
+    <div id="ob1" style="flex:1;display:none">
+      <h2 style="font-size:24px;margin-bottom:4px">Je dagdoelen</h2>
+      <p class="muted" style="margin-top:0">Je kunt dit later in Instellingen wijzigen.</p>
+      <div class="card"><div class="space"><span>Calorieën</span><b id="g_kcal" style="color:var(--gold)">1800 kcal</b></div></div>
+      <div class="card"><div class="space"><span>Eiwit</span><b id="g_prot" style="color:var(--gold)">110 g</b></div></div>
+      <div class="card"><div class="space"><span>Suikerlimiet</span><b id="g_sugar" style="color:var(--gold)">40 g</b></div></div>
+    </div>
+    <button class="btn btn-navy" id="obNext" onclick="obNext()">Volgende</button>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <div class="screen active" id="home">
+    <div class="appbar"><h1>Vandaag</h1><span class="ic" style="font-size:22px" onclick="go('scan')">📷</span></div>
+    <div class="scroll">
+      <div class="card">
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg width="128" height="128"><circle cx="64" cy="64" r="58" stroke="#EDF1F5" stroke-width="12" fill="none"/>
+            <circle id="kcalArc" cx="64" cy="64" r="58" stroke="#C9A84C" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="364" stroke-dashoffset="200"/></svg>
+            <div class="center"><span class="val" id="kcalNow">540</span><span class="unit">kcal</span></div>
+          </div>
+          <div>
+            <h3>Dagprogressie</h3>
+            <div id="kcalLeft" class="muted" style="font-weight:700;color:var(--slate)">1260 kcal over</div>
+            <div class="muted">Rustig op weg naar je doel.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="space"><b>Eiwit</b><span id="protTxt" class="muted" style="font-weight:700">45 / 110 g</span></div>
+        <div class="bar"><i id="protBar" style="width:41%;background:var(--protein)"></i></div>
+        <div class="space" style="margin-top:16px"><b>Suiker</b><span id="sugarTxt" class="muted" style="font-weight:700">22 / 40 g</span></div>
+        <div class="bar"><i id="sugarBar" style="width:55%;background:var(--sugar)"></i></div>
+      </div>
+      <div class="card">
+        <b>Deze week</b>
+        <div class="week" id="week" style="margin-top:14px"></div>
+        <div class="wklabels"><span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span></div>
+      </div>
+      <h3 style="margin:8px 0 10px">Eetmomenten</h3>
+      <div class="card meal"><div class="space"><span>🌅 Ontbijt</span><span class="muted">320 kcal</span></div>
+        <div class="logitem"><span>Skyr naturel · 150 g</span><b>95 kcal</b></div>
+        <div class="logitem"><span>Havermeel koekjes · 30 g</span><b>132 kcal</b></div></div>
+      <div class="card meal"><div class="space"><span>🍱 Lunch</span><span class="muted">0 kcal</span></div>
+        <div class="muted" style="padding-top:6px">Nog niets gelogd.</div></div>
+      <div class="card meal"><div class="space"><span>🍪 Snack</span><span class="muted">120 kcal</span></div>
+        <div class="logitem"><span>Popcorn · 30 g</span><b>114 kcal</b></div></div>
+    </div>
+  </div>
+
+  <!-- ============ SCAN ============ -->
+  <div class="screen" id="scan">
+    <div class="appbar"><h1>Scan</h1></div>
+    <div class="scroll">
+      <div class="scanframe"><div class="box"></div></div>
+      <p class="muted" style="text-align:center;margin:18px 0">Richt op de streepjescode van het product.</p>
+      <button class="btn btn-gold" onclick="go('product')">Simuleer een scan</button>
+      <div style="height:10px"></div>
+      <button class="btn btn-ghost" onclick="go('product')">Barcode handmatig invoeren</button>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCT DETAIL ============ -->
+  <div class="screen" id="product">
+    <div class="appbar"><span onclick="go('scan')" style="font-size:20px;cursor:pointer">‹ terug</span><span id="favBtn" style="font-size:20px;cursor:pointer" onclick="toggleFav()">🤍</span></div>
+    <div class="scroll">
+      <div class="row" style="align-items:flex-start">
+        <div class="thumbimg" style="width:72px;height:72px">🍫</div>
+        <div>
+          <h2 style="font-size:20px">Melkchocolade reep</h2>
+          <div class="muted">Classic</div>
+          <div style="margin-top:6px"><span class="tag">Nutri-Score E</span><span class="tag">NOVA 4</span></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="space"><b>Portie</b><b id="gramTxt" style="color:var(--gold);font-size:18px">100 g</b></div>
+        <input type="range" min="10" max="300" value="100" oninput="setGrams(this.value)" />
+        <div style="margin-top:8px">
+          <button class="chip" onclick="setGrams(30)">30 g</button>
+          <button class="chip" onclick="setGrams(50)">50 g</button>
+          <button class="chip" onclick="setGrams(100)">100 g</button>
+        </div>
+        <div style="margin-top:8px"><b>Eetmoment</b><div style="margin-top:8px">
+          <button class="chip sel" onclick="selChip(this)">Ontbijt</button>
+          <button class="chip" onclick="selChip(this)">Lunch</button>
+          <button class="chip" onclick="selChip(this)">Snack</button></div></div>
+      </div>
+      <div class="card">
+        <b>Voedingswaarden (<span id="nGram">100</span> g)</b>
+        <div class="logitem" style="border-top:0"><span class="muted">Energie</span><b id="nKcal">535 kcal</b></div>
+        <div class="logitem"><span class="muted">Eiwit</span><b id="nProt">7.0 g</b></div>
+        <div class="logitem"><span class="muted">Suiker</span><b id="nSugar">56.0 g</b></div>
+      </div>
+      <button class="btn btn-navy" onclick="toast('Gelogd bij je dag ✓'); go('home')">＋ Log dit product</button>
+      <div style="height:10px"></div>
+      <button class="btn btn-gold" onclick="go('swap')">⇄ Geef mij een betere swap</button>
+    </div>
+  </div>
+
+  <!-- ============ SNACKSWAP ============ -->
+  <div class="screen" id="swap">
+    <div class="appbar"><span onclick="go('product')" style="font-size:20px;cursor:pointer">‹ terug</span><h1 style="font-size:18px">Betere swaps</h1><span></span></div>
+    <div class="scroll">
+      <p class="muted">Afgestemd op je doel en wat je vandaag al at.</p>
+      <div class="card">
+        <div class="row" style="align-items:flex-start">
+          <div class="thumbimg">🍫</div>
+          <div style="flex:1"><b>Pure chocolade 85%</b><div class="muted">Noir</div></div>
+          <span class="score">70% match</span>
+        </div>
+        <p style="margin:12px 0 4px">Fors minder suiker en een rijkere smaak — een kleiner stukje voldoet.</p>
+        <span class="hl">−34g suiker</span><span class="hl">minder bewerkt</span>
+        <div class="space" style="margin-top:14px;border-top:1px solid var(--mist);padding-top:12px">
+          <span class="muted">Nuttige swap?</span>
+          <div><button class="thumb" onclick="thumb(this,1)">👍</button> <button class="thumb" onclick="thumb(this,0)">👎</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row" style="align-items:flex-start">
+          <div class="thumbimg">🍫</div>
+          <div style="flex:1"><b>Eiwitreep chocolade</b><div class="muted">FitBite</div></div>
+          <span class="score">65% match</span>
+        </div>
+        <p style="margin:12px 0 4px">Veel meer eiwit en veel minder suiker, dus je blijft langer verzadigd.</p>
+        <span class="hl">+25g eiwit</span><span class="hl">−51g suiker</span>
+        <div class="space" style="margin-top:14px;border-top:1px solid var(--mist);padding-top:12px">
+          <span class="muted">Nuttige swap?</span>
+          <div><button class="thumb" onclick="thumb(this,1)">👍</button> <button class="thumb" onclick="thumb(this,0)">👎</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FAVORIETEN ============ -->
+  <div class="screen" id="fav">
+    <div class="appbar"><h1>Favorieten</h1></div>
+    <div class="scroll">
+      <div class="card"><div class="space"><span>❤️ Skyr naturel</span><span class="muted">8712345000080</span></div></div>
+      <div class="card"><div class="space"><span>❤️ Popcorn licht gezouten</span><span class="muted">8712345000066</span></div></div>
+    </div>
+  </div>
+
+  <!-- ============ INSTELLINGEN ============ -->
+  <div class="screen" id="settings">
+    <div class="appbar"><h1>Instellingen</h1></div>
+    <div class="scroll">
+      <div class="muted" style="font-weight:700;font-size:13px;margin:4px 0 8px">JOUW DOEL</div>
+      <div class="card">
+        <div class="space"><h3 id="s_goal">Afvallen</h3><span class="muted">wijzig</span></div>
+        <div class="row" style="margin-top:10px">
+          <div style="flex:1"><b id="s_kcal">1800</b><div class="muted" style="font-size:12px">kcal</div></div>
+          <div style="flex:1"><b id="s_prot">110 g</b><div class="muted" style="font-size:12px">eiwit</div></div>
+          <div style="flex:1"><b id="s_sugar">40 g</b><div class="muted" style="font-size:12px">suikerlimiet</div></div>
+        </div>
+      </div>
+      <div class="muted" style="font-weight:700;font-size:13px;margin:16px 0 8px">PRIVACY</div>
+      <div class="card">
+        <div class="space"><div><b>Synchroniseren</b><div class="muted" style="font-size:13px">Logs blijven lokaal tot je dit aanzet.</div></div>
+          <div class="switch" onclick="this.classList.toggle('on')"><i></i></div></div>
+      </div>
+      <div class="card">
+        <div class="space"><div><b>Anonieme statistieken</b></div>
+          <div class="switch on" onclick="this.classList.toggle('on')"><i></i></div></div>
+      </div>
+      <div class="muted" style="text-align:center;margin-top:12px">Bitewise · prototype</div>
+    </div>
+  </div>
+
+  <!-- ============ NAV ============ -->
+  <div class="nav" id="nav">
+    <button class="on" data-s="home" onclick="go('home')"><span class="ic">🏠</span>Home</button>
+    <button data-s="scan" onclick="go('scan')"><span class="ic">📷</span>Scan</button>
+    <button data-s="fav" onclick="go('fav')"><span class="ic">❤️</span>Favorieten</button>
+    <button data-s="settings" onclick="go('settings')"><span class="ic">⚙️</span>Instellingen</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  // Basisproduct per 100 g (Melkchocolade)
+  const per100 = {kcal:535, prot:7, sugar:56};
+  const goal = {kcal:1800, prot:110, sugar:40, name:'Afvallen'};
+  let obStep = 0;
+
+  function pickGoal(el){
+    document.querySelectorAll('.goalcard').forEach(c=>c.classList.remove('sel'));
+    el.classList.add('sel');
+    goal.name = el.dataset.goal; goal.kcal=+el.dataset.kcal; goal.prot=+el.dataset.prot; goal.sugar=+el.dataset.sugar;
+    g('g_kcal').textContent = goal.kcal+' kcal';
+    g('g_prot').textContent = goal.prot+' g';
+    g('g_sugar').textContent = goal.sugar+' g';
+  }
+  function obNext(){
+    if(obStep===0){ obStep=1; g('ob0').style.display='none'; g('ob1').style.display='block';
+      g('d0').classList.remove('on'); g('d1').classList.add('on'); g('obNext').textContent='Aan de slag'; }
+    else { g('onboarding').style.display='none'; applyGoal(); }
+  }
+  function applyGoal(){
+    g('s_goal').textContent=goal.name; g('s_kcal').textContent=goal.kcal;
+    g('s_prot').textContent=goal.prot+' g'; g('s_sugar').textContent=goal.sugar+' g';
+    renderHome();
+  }
+
+  function renderHome(){
+    const kcalNow=540, prot=45, sugar=22;
+    g('kcalNow').textContent=kcalNow;
+    const left=goal.kcal-kcalNow;
+    g('kcalLeft').textContent = left>=0? left+' kcal over' : Math.abs(left)+' kcal boven doel';
+    const circ=364;
+    g('kcalArc').setAttribute('stroke-dashoffset', circ*(1-Math.min(1,kcalNow/goal.kcal)));
+    g('protTxt').textContent=prot+' / '+goal.prot+' g';
+    g('protBar').style.width=Math.min(100,prot/goal.prot*100)+'%';
+    g('sugarTxt').textContent=sugar+' / '+goal.sugar+' g';
+    const sp=sugar/goal.sugar*100;
+    g('sugarBar').style.width=Math.min(100,sp)+'%';
+    g('sugarBar').style.background = sugar>goal.sugar? 'var(--danger)':'var(--sugar)';
+    // week
+    const data=[1450,1980,1720,2100,540,0,0];
+    const max=Math.max(goal.kcal,...data);
+    const wk=g('week'); wk.innerHTML='';
+    data.forEach((v,i)=>{
+      const col=document.createElement('div'); col.className='col';
+      const b=document.createElement('div'); b.className='barv'+(i===4?' today':'')+(v>goal.kcal?' over':'');
+      b.style.height=Math.max(4,v/max*120)+'px'; col.appendChild(b); wk.appendChild(col);
+    });
+  }
+
+  function setGrams(v){
+    v=+v; g('gramTxt').textContent=v+' g'; g('nGram').textContent=v;
+    const f=v/100;
+    g('nKcal').textContent=Math.round(per100.kcal*f)+' kcal';
+    g('nProt').textContent=(per100.prot*f).toFixed(1)+' g';
+    g('nSugar').textContent=(per100.sugar*f).toFixed(1)+' g';
+    document.querySelectorAll('#product input[type=range]').forEach(r=>r.value=v);
+  }
+  function selChip(el){ el.parentNode.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); }
+  function thumb(el,pos){ const p=el.parentNode; p.querySelectorAll('.thumb').forEach(t=>t.classList.remove('on')); el.classList.add('on'); }
+  let fav=false;
+  function toggleFav(){ fav=!fav; g('favBtn').textContent=fav?'❤️':'🤍'; }
+
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    g(id).classList.add('active');
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.s===id));
+    document.querySelector('.scroll'); // no-op
+    const sc=g(id).querySelector('.scroll'); if(sc) sc.scrollTop=0;
+  }
+  let toastT;
+  function toast(msg){ const t=g('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
+  function g(id){ return document.getElementById(id); }
+
+  renderHome();
+</script>
+</body>
+</html>
