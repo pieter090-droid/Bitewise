@@ -165,8 +165,8 @@ class _SwapCard extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
                             color: AppColors.navy)),
-                    if (item.brand != null && item.brand!.isNotEmpty)
-                      Text(item.brand!,
+                    if (item.tag != null && item.tag!.isNotEmpty)
+                      Text(item.tag!,
                           style: const TextStyle(
                               color: AppColors.slate, fontSize: 13)),
                   ],
@@ -186,12 +186,10 @@ class _SwapCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (item.kcal100 != null)
-                  _pill('${_fmt(item.kcal100!)} kcal'),
-                if (item.sugar100 != null)
-                  _pill('${_fmt(item.sugar100!)}g suiker'),
-                if (item.protein100 != null)
-                  _pill('${_fmt(item.protein100!)}g eiwit'),
+                if (item.kcal != null) _pill('${_fmt(item.kcal!)} kcal'),
+                if (item.sugarG != null) _pill('${_fmt(item.sugarG!)}g suiker'),
+                if (item.proteinG != null)
+                  _pill('${_fmt(item.proteinG!)}g eiwit'),
               ],
             ),
           ],
@@ -201,7 +199,7 @@ class _SwapCard extends StatelessWidget {
   }
 
   bool get _hasNutrition =>
-      item.kcal100 != null || item.sugar100 != null || item.protein100 != null;
+      item.kcal != null || item.sugarG != null || item.proteinG != null;
 
   Widget _pill(String text) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
