@@ -14,6 +14,8 @@ create table if not exists public.user_day_logs (
   kcal            numeric not null,
   protein         numeric not null,
   sugar           numeric not null,
+  carbs           numeric not null default 0,
+  fat             numeric not null default 0,
   log_date        date not null,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now(),

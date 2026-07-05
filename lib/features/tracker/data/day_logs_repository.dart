@@ -112,6 +112,8 @@ class DayLogsRepository {
     required double protein,
     required double sugar,
     required DateTime logDate,
+    double carbs = 0,
+    double fat = 0,
   }) async {
     await _db.into(_db.dayLogs).insert(
           DayLogsCompanion.insert(
@@ -122,6 +124,8 @@ class DayLogsRepository {
             kcal: kcal,
             protein: protein,
             sugar: sugar,
+            carbs: Value(carbs),
+            fat: Value(fat),
             logDate: logDate,
             remoteId: Value(remoteId),
             dirty: const Value(false),

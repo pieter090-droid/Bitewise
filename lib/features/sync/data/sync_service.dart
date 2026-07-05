@@ -39,6 +39,8 @@ class SyncService implements SyncApi {
     required double kcal,
     required double protein,
     required double sugar,
+    required double carbs,
+    required double fat,
     required DateTime logDate,
   }) async {
     final uid = userId!;
@@ -54,6 +56,8 @@ class SyncService implements SyncApi {
           'kcal': kcal,
           'protein': protein,
           'sugar': sugar,
+          'carbs': carbs,
+          'fat': fat,
           'log_date': _dateOnly(logDate),
         }, onConflict: 'user_id,client_id')
         .select('id')

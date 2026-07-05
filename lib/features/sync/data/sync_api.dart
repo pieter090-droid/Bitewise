@@ -15,6 +15,8 @@ abstract interface class SyncApi {
     required double kcal,
     required double protein,
     required double sugar,
+    required double carbs,
+    required double fat,
     required DateTime logDate,
   });
 

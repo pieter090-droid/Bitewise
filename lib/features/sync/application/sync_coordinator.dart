@@ -80,6 +80,8 @@ class SyncCoordinator {
         kcal: log.kcal,
         protein: log.protein,
         sugar: log.sugar,
+        carbs: log.carbs,
+        fat: log.fat,
         logDate: log.logDate,
       );
       await repo.markSynced(log.id, remoteId);
@@ -108,6 +110,8 @@ class SyncCoordinator {
         kcal: (row['kcal'] as num).toDouble(),
         protein: (row['protein'] as num).toDouble(),
         sugar: (row['sugar'] as num).toDouble(),
+        carbs: (row['carbs'] as num?)?.toDouble() ?? 0,
+        fat: (row['fat'] as num?)?.toDouble() ?? 0,
         logDate: DateTime(date.year, date.month, date.day),
       );
       count++;
