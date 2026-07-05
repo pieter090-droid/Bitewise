@@ -1,15 +1,20 @@
-name: Deploy HTML prototype (GitHub Pages)
+name: Deploy web app (GitHub Pages)
 
-# Publiceert web_prototype/ als website. Open de URL daarna in Safari op je
-# iPhone — geen installatie, geen signing nodig.
+# Bouwt de Flutter-webversie van Bitewise en publiceert die op GitHub Pages,
+# zodat je de app op je iPhone kunt openen via een URL (Safari) — geen
+# installatie of signing nodig.
 #
-# Eenmalig inschakelen: repo → Settings → Pages → Source = "GitHub Actions".
+# Eenmalig instellen:
+#   1. Repo -> Settings -> Pages -> Source = "GitHub Actions".
+#   2. Repo -> Settings -> Secrets and variables -> Actions -> New secret:
+#        SUPABASE_URL        = https://ulgfgawoulkyumfzqgrc.supabase.co
+#        SUPABASE_ANON_KEY   = sb_publishable_...   (je publishable key)
+#   Daarna draait deze workflow bij elke push naar main/master.
 
 on:
   workflow_dispatch:
   push:
     branches: [main, master]
-    paths: ['web_prototype/**', '.github/workflows/pages.yml']
 
 permissions:
   contents: read
@@ -21,16 +26,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      # De publishable key mag in de client (dat is z'n doel). We injecteren
+      # 'm via --dart-define uit een GitHub Secret, zodat 'ie niet in de repo staat.
+      - name: Build web
+        run: >
+          flutter build web --release
+          --base-href "/${{ github.event.repository.name }}/"
+          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web_prototype
+          path: build/web
       - id: deploy
         uses: actions/deploy-pages@v4
