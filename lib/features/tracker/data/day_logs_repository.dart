@@ -2,7 +2,6 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bitewise/core/database/app_database.dart';
-import 'package:bitewise/features/product/domain/product.dart';
 import 'package:bitewise/features/tracker/domain/day_log.dart';
 import 'package:bitewise/features/tracker/domain/meal_type.dart';
 
@@ -37,23 +36,28 @@ class DayLogsRepository {
     return query.watch().map((rows) => rows.map(_toDomain).toList());
   }
 
-  /// Logt een product voor een portie in gram/ml op een eetmoment.
-  Future<void> logProduct({
-    required Product product,
+  /// Voegt één item toe aan het daglog. De voedingswaarden zijn die van de
+  /// gelogde portie (al berekend door de aanroeper). Werkt zowel voor een
+  /// gescand product als voor een gekozen swap.
+  Future<void> logEntry({
+    String? barcode,
+    required String productName,
     required MealType mealType,
     required double grams,
+    required double kcal,
+    required double protein,
+    required double sugar,
     DateTime? day,
   }) async {
-    final scaled = product.nutriments.scaledToGrams(grams);
     await _db.into(_db.dayLogs).insert(
           DayLogsCompanion.insert(
-            barcode: Value(product.barcode),
-            productName: product.name,
+            barcode: Value(barcode),
+            productName: productName,
             mealTypeIndex: mealType.index,
             grams: grams,
-            kcal: scaled.kcal,
-            protein: scaled.protein,
-            sugar: scaled.sugar,
+            kcal: kcal,
+            protein: protein,
+            sugar: sugar,
             logDate: _dayKey(day ?? DateTime.now()),
           ),
         );

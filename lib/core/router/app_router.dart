@@ -6,22 +6,24 @@ import 'package:bitewise/core/preferences/preferences_service.dart';
 import 'package:bitewise/features/favorites/presentation/favorites_screen.dart';
 import 'package:bitewise/features/home/presentation/home_screen.dart';
 import 'package:bitewise/features/onboarding/presentation/onboarding_screen.dart';
-import 'package:bitewise/features/product/presentation/product_detail_screen.dart';
 import 'package:bitewise/features/scanner/presentation/scanner_screen.dart';
 import 'package:bitewise/features/settings/presentation/settings_screen.dart';
 import 'package:bitewise/features/shell/app_shell.dart';
-import 'package:bitewise/features/snackswap/presentation/snackswap_screen.dart';
+import 'package:bitewise/features/snackswap/presentation/product_screen.dart';
+import 'package:bitewise/features/snackswap/presentation/scan_screen.dart';
+import 'package:bitewise/features/snackswap/presentation/swap_screen.dart';
 
-/// Route-paden centraal, zodat verwijzingen typsafe blijven.
+/// Route-paden centraal.
 abstract final class Routes {
   static const onboarding = '/onboarding';
   static const home = '/';
-  static const scanner = '/scanner';
+  static const scan = '/scan';
   static const favorites = '/favorites';
   static const settings = '/settings';
+  static const camera = '/camera';
 
   static String product(String barcode) => '/product/$barcode';
-  static String snackswap(String barcode) => '/snackswap/$barcode';
+  static String swap(String barcode) => '/swap/$barcode';
 }
 
 final _rootKey = GlobalKey<NavigatorState>();
@@ -54,8 +56,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
-            path: Routes.scanner,
-            builder: (context, state) => const ScannerScreen(),
+            path: Routes.scan,
+            builder: (context, state) => const ScanScreen(),
           ),
           GoRoute(
             path: Routes.favorites,
@@ -67,20 +69,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Gepushte detailschermen (buiten de shell, volledig scherm).
+      // Volledig-scherm gepushte routes (buiten de shell).
       GoRoute(
         parentNavigatorKey: _rootKey,
-        path: '/product/:barcode',
-        builder: (context, state) => ProductDetailScreen(
-          barcode: state.pathParameters['barcode']!,
-        ),
+        path: Routes.camera,
+        builder: (context, state) => const ScannerScreen(),
       ),
       GoRoute(
         parentNavigatorKey: _rootKey,
-        path: '/snackswap/:barcode',
-        builder: (context, state) => SnackSwapScreen(
-          barcode: state.pathParameters['barcode']!,
-        ),
+        path: '/product/:barcode',
+        builder: (context, state) =>
+            ProductScreen(barcode: state.pathParameters['barcode']!),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootKey,
+        path: '/swap/:barcode',
+        builder: (context, state) =>
+            SwapScreen(barcode: state.pathParameters['barcode']!),
       ),
     ],
   );

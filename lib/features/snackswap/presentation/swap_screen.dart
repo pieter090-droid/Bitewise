@@ -6,6 +6,9 @@ import 'package:bitewise/features/snackswap/application/snackswap_providers.dart
 import 'package:bitewise/features/snackswap/data/snackswap_service.dart';
 import 'package:bitewise/features/snackswap/domain/goal.dart';
 import 'package:bitewise/features/snackswap/domain/swap_suggestion.dart';
+import 'package:bitewise/features/sync/application/sync_coordinator.dart';
+import 'package:bitewise/features/tracker/data/day_logs_repository.dart';
+import 'package:bitewise/features/tracker/domain/meal_type.dart';
 
 class SwapScreen extends ConsumerStatefulWidget {
   const SwapScreen({required this.barcode, super.key});
@@ -30,7 +33,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     super.didChangeDependencies();
     if (_init) return;
     _init = true;
-    _goal = ref.read(defaultGoalProvider);
+    _goal = ref.read(swapDefaultGoalProvider);
     _load();
   }
 
@@ -62,6 +65,24 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     if (goal == _goal) return;
     setState(() => _goal = goal);
     _load();
+  }
+
+  /// Logt een gekozen swap direct in het daglog (per portie).
+  Future<void> _logSwap(SwapSuggestion item) async {
+    final meal = MealType.suggestForNow();
+    await ref.read(dayLogsRepositoryProvider).logEntry(
+          productName: item.name,
+          mealType: meal,
+          grams: 0, // swap = 1 portie, geen gramgewicht
+          kcal: item.kcal ?? 0,
+          protein: item.proteinG ?? 0,
+          sugar: item.sugarG ?? 0,
+        );
+    ref.read(syncCoordinatorProvider).onLogsChanged();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${item.name} toegevoegd aan ${meal.label}')),
+    );
   }
 
   @override
@@ -119,7 +140,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             for (var i = 0; i < _items.length; i++)
-              _SwapCard(rank: i + 1, item: _items[i]),
+              _SwapCard(
+                rank: i + 1,
+                item: _items[i],
+                onLog: () => _logSwap(_items[i]),
+              ),
           ],
         );
     }
@@ -127,10 +152,15 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 }
 
 class _SwapCard extends StatelessWidget {
-  const _SwapCard({required this.rank, required this.item});
+  const _SwapCard({
+    required this.rank,
+    required this.item,
+    required this.onLog,
+  });
 
   final int rank;
   final SwapSuggestion item;
+  final VoidCallback onLog;
 
   @override
   Widget build(BuildContext context) {
@@ -193,6 +223,15 @@ class _SwapCard extends StatelessWidget {
               ],
             ),
           ],
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              onPressed: onLog,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Toevoegen aan log'),
+            ),
+          ),
         ],
       ),
     );

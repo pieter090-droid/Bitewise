@@ -2,7 +2,6 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bitewise/core/database/app_database.dart';
-import 'package:bitewise/features/product/domain/product.dart';
 
 /// Eenvoudig favorietmodel (lokaal).
 class Favorite {
@@ -38,20 +37,18 @@ class FavoritesRepository {
     return q.watch().map((rows) => rows.isNotEmpty);
   }
 
-  Future<void> toggle(Product product) async {
+  /// Zet een product aan/uit als favoriet op basis van barcode + naam.
+  Future<void> toggle({required String barcode, required String name}) async {
     final existing = await (_db.select(_db.favoriteProducts)
-          ..where((t) => t.barcode.equals(product.barcode)))
+          ..where((t) => t.barcode.equals(barcode)))
         .getSingleOrNull();
     if (existing != null) {
       await (_db.delete(_db.favoriteProducts)
-            ..where((t) => t.barcode.equals(product.barcode)))
+            ..where((t) => t.barcode.equals(barcode)))
           .go();
     } else {
       await _db.into(_db.favoriteProducts).insert(
-            FavoriteProductsCompanion.insert(
-              barcode: product.barcode,
-              name: product.name,
-            ),
+            FavoriteProductsCompanion.insert(barcode: barcode, name: name),
           );
     }
   }

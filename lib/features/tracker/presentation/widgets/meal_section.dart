@@ -84,7 +84,8 @@ class _LogTile extends ConsumerWidget {
                 children: [
                   Text(log.productName,
                       maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text('${log.grams.round()} g · ${log.protein.round()}g eiwit',
+                  Text(
+                      '${log.grams > 0 ? '${log.grams.round()} g' : '1 portie'} · ${log.protein.round()}g eiwit',
                       style: const TextStyle(
                           fontSize: 12, color: AppColors.slate)),
                 ],

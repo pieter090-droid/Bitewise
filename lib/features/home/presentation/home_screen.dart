@@ -26,7 +26,7 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => context.go(Routes.scanner),
+            onPressed: () => context.go(Routes.scan),
           ),
         ],
       ),
