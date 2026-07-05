@@ -7,7 +7,11 @@ import 'package:bitewise/core/router/app_router.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 
 class ScannerScreen extends ConsumerStatefulWidget {
-  const ScannerScreen({super.key});
+  const ScannerScreen({this.pickMode = false, super.key});
+
+  /// In pickMode geeft een scan de barcode terug via Navigator.pop (voor een
+  /// gerecht/favoriet), i.p.v. door te gaan naar het productdetail.
+  final bool pickMode;
 
   @override
   ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
@@ -33,10 +37,14 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
     if (code == null) return;
     _handled = true;
-    _openProduct(code);
+    _handleBarcode(code);
   }
 
-  void _openProduct(String barcode) {
+  void _handleBarcode(String barcode) {
+    if (widget.pickMode) {
+      Navigator.pop(context, barcode);
+      return;
+    }
     context.push(Routes.product(barcode)).then((_) {
       // Bij terugkeer weer klaar voor een nieuwe scan.
       if (mounted) setState(() => _handled = false);
@@ -67,7 +75,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         ],
       ),
     );
-    if (barcode != null && barcode.isNotEmpty) _openProduct(barcode);
+    if (barcode != null && barcode.isNotEmpty) _handleBarcode(barcode);
   }
 
   @override

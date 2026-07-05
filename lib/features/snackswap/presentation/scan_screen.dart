@@ -66,6 +66,16 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     }
   }
 
+  Future<void> _openCamera() async {
+    if (widget.pickMode) {
+      // Camera in kiesmodus geeft de barcode terug; die reiken we door.
+      final bc = await context.push<String>(Routes.cameraPick);
+      if (bc != null && mounted) _open(bc);
+    } else {
+      context.push(Routes.camera);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pendingMeal = ref.watch(pendingMealProvider);
@@ -107,11 +117,11 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
               ),
             ),
             Expanded(child: _body(isBarcode)),
-            if (!kIsWeb && !widget.pickMode)
+            if (!kIsWeb)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.camera),
+                  onPressed: _openCamera,
                   icon: const Icon(Icons.qr_code_scanner),
                   label: const Text('Scan met camera'),
                 ),

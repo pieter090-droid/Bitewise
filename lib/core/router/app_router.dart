@@ -22,6 +22,7 @@ abstract final class Routes {
   static const favorites = '/favorites';
   static const settings = '/settings';
   static const camera = '/camera';
+  static const cameraPick = '/camera-pick';
   static const pick = '/pick';
   static const recipeBuilder = '/recipe/new';
 
@@ -77,6 +78,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         path: Routes.camera,
         builder: (context, state) => const ScannerScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootKey,
+        path: Routes.cameraPick,
+        builder: (context, state) => const ScannerScreen(pickMode: true),
       ),
       GoRoute(
         parentNavigatorKey: _rootKey,
