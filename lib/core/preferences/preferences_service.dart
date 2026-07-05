@@ -17,7 +17,9 @@ class PreferencesService {
   Future<void> setOnboardingComplete(bool value) =>
       _prefs.setBool(AppConstants.prefOnboardingComplete, value);
 
-  bool get syncEnabled => _prefs.getBool(AppConstants.prefSyncEnabled) ?? false;
+  // Pilot: standaard aan, zodat logs automatisch naar de backend worden
+  // geback-upt (de gebruiker kan het in Instellingen uitzetten).
+  bool get syncEnabled => _prefs.getBool(AppConstants.prefSyncEnabled) ?? true;
 
   Future<void> setSyncEnabled(bool value) =>
       _prefs.setBool(AppConstants.prefSyncEnabled, value);
