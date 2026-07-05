@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/onboarding/application/onboarding_controller.dart';
 import 'package:bitewise/features/onboarding/domain/goal_type.dart';
+import 'package:bitewise/features/onboarding/domain/nutrition_calculator.dart';
+import 'package:bitewise/features/onboarding/presentation/calculator_sheet.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -177,9 +179,26 @@ class _TargetsStep extends ConsumerWidget {
         Text('Je dagdoelen',
             style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 4),
-        const Text('Pas gerust aan. Je kunt dit later wijzigen.',
+        const Text('Pas gerust aan, of laat ze berekenen.',
             style: TextStyle(color: AppColors.slate)),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final res = await showModalBottomSheet<NutritionSuggestion>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => CalculatorSheet(goal: goal.goalType),
+            );
+            if (res != null) {
+              ctrl.setCalorieTarget(res.calorieTarget);
+              ctrl.setProteinTarget(res.proteinTarget);
+              ctrl.setSugarLimit(res.sugarLimit);
+            }
+          },
+          icon: const Icon(Icons.calculate_outlined),
+          label: const Text('Bereken mijn behoefte'),
+        ),
+        const SizedBox(height: 12),
         _SliderTile(
           label: 'Calorieën',
           value: goal.calorieTarget.toDouble(),

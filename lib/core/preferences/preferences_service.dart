@@ -35,6 +35,14 @@ class PreferencesService {
   Future<void> setDefaultGoal(String apiValue) =>
       _prefs.setString(AppConstants.prefDefaultGoal, apiValue);
 
+  /// Opgeslagen profiel voor de behoefteberekening (geslacht/leeftijd/lengte/
+  /// gewicht/beweging), als JSON. Null als nog nooit ingevuld.
+  String? get calculatorProfileJson =>
+      _prefs.getString(AppConstants.prefCalculatorProfile);
+
+  Future<void> setCalculatorProfileJson(String json) =>
+      _prefs.setString(AppConstants.prefCalculatorProfile, json);
+
   /// Stabiele, anonieme installatie-id. Wordt gebruikt om lokale logs een
   /// uniforme client-sleutel te geven voor idempotente sync.
   String getOrCreateInstallId() {

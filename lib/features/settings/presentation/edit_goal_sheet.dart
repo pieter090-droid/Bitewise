@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/onboarding/domain/goal_type.dart';
+import 'package:bitewise/features/onboarding/domain/nutrition_calculator.dart';
 import 'package:bitewise/features/onboarding/domain/user_goal.dart';
+import 'package:bitewise/features/onboarding/presentation/calculator_sheet.dart';
 
 /// Bottom sheet om het actieve doel bij te werken. Geeft de nieuwe [UserGoal]
 /// terug via Navigator.pop.
@@ -59,7 +61,27 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final res =
+                          await showModalBottomSheet<NutritionSuggestion>(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => CalculatorSheet(goal: _goal.goalType),
+                      );
+                      if (res != null) {
+                        setState(() => _goal = _goal.copyWith(
+                              calorieTarget: res.calorieTarget,
+                              proteinTarget: res.proteinTarget,
+                              sugarLimit: res.sugarLimit,
+                            ));
+                      }
+                    },
+                    icon: const Icon(Icons.calculate_outlined),
+                    label: const Text('Bereken mijn behoefte'),
+                  ),
+                  const SizedBox(height: 12),
                   _slider('Calorieën', _goal.calorieTarget.toDouble(), 1200,
                       3500, 46, 'kcal',
                       (v) => setState(() =>
