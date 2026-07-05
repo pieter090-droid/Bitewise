@@ -1,11 +1,4 @@
-name: iOS build (unsigned)
-
-# Bouwt een niet-gesigneerde iOS .ipa op een macOS-runner in de cloud.
-# Je hebt hiervoor GEEN eigen Mac nodig. De .ipa komt als artifact beschikbaar;
-# installeren op je iPhone doe je daarna met Sideloadly (gratis) of TestFlight.
-#
-# Start handmatig via het tabblad "Actions" → deze workflow → "Run workflow",
-# of automatisch bij een push naar main/master.
+name: iOS build
 
 on:
   workflow_dispatch:
@@ -13,6 +6,10 @@ on:
 jobs:
   build-ios:
     runs-on: macos-14
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,36 +20,38 @@ jobs:
           channel: stable
           cache: true
 
-      - run: flutter --version
+      - name: Show Flutter version
+        run: flutter --version
 
-      # Genereer de iOS-projectmap (die zit niet in de repo).
-      - name: Generate iOS platform files
-        run: flutter create . --platforms=ios --org app.bitewise --project-name bitewise
-
-      - name: Set iOS platform in Podfile
-        run: sed -i.bak "s/^# platform :ios/platform :ios/" ios/Podfile
-
-      # Camera-permissie voor mobile_scanner (setup_platform.ps1 is Windows-only).
-      - name: Add camera usage description
+      - name: Ensure camera usage description
         run: |
-          /usr/libexec/PlistBuddy -c \
-            "Add :NSCameraUsageDescription string 'Bitewise gebruikt de camera om barcodes te scannen.'" \
-            ios/Runner/Info.plist || true
+          if ! /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" ios/Runner/Info.plist >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Bitewise gebruikt de camera om productbarcodes te scannen.'" ios/Runner/Info.plist
+          fi
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Code generation (Drift)
+      - name: Code generation
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Build iOS (unsigned)
-        run: flutter build ios --release --no-codesign
+      - name: Check Supabase configuration
+        run: |
+          test -n "$SUPABASE_URL" || { echo "Missing GitHub Actions secret: SUPABASE_URL"; exit 1; }
+          test -n "$SUPABASE_ANON_KEY" || { echo "Missing GitHub Actions secret: SUPABASE_ANON_KEY"; exit 1; }
+
+      - name: Build iOS unsigned
+        run: >-
+          flutter build ios --release --no-codesign
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: Package unsigned IPA
         run: |
+          rm -rf build/ios/iphoneos/Payload
+          mkdir -p build/ios/iphoneos/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/Runner.app
           cd build/ios/iphoneos
-          mkdir -p Payload
-          cp -R Runner.app Payload/Runner.app
           zip -qr app-unsigned.ipa Payload
 
       - name: Upload IPA artifact
