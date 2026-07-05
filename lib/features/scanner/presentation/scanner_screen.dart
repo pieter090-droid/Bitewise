@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,11 @@ class ScannerScreen extends ConsumerStatefulWidget {
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   final _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
-    formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA],
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+    ],
   );
   bool _handled = false;
 
@@ -87,10 +92,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         foregroundColor: AppColors.white,
         title: const Text('Scan', style: TextStyle(color: AppColors.white)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_on),
-            onPressed: () => _controller.toggleTorch(),
-          ),
+          if (!kIsWeb)
+            IconButton(
+              icon: const Icon(Icons.flash_on),
+              onPressed: () => _controller.toggleTorch(),
+            ),
           IconButton(
             icon: const Icon(Icons.cameraswitch_outlined),
             onPressed: () => _controller.switchCamera(),
@@ -101,7 +107,32 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect),
+          MobileScanner(
+            controller: _controller,
+            onDetect: _onDetect,
+            errorBuilder: (context, error, child) => ColoredBox(
+              color: AppColors.navy,
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.no_photography_outlined,
+                          color: AppColors.white, size: 48),
+                      SizedBox(height: 16),
+                      Text(
+                        'De camera kon niet worden geopend. Controleer de '
+                        'cameratoegang in de browser- of apparaatinstellingen.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           const _ScannerOverlay(),
           Positioned(
             left: 24,
