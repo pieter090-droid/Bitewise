@@ -21,3 +21,9 @@ assets/env/env.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code local settings (personal, not shared)
+.claude/
+
+# Supabase CLI lokale cache/state (machine-specifiek)
+supabase/.temp/
