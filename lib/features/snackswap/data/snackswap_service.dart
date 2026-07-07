@@ -273,6 +273,35 @@ class SnackSwapService {
     }
   }
 
+  /// Kandidaten met dezelfde `product_form` (bv. "spread") maar bewust een
+  /// ANDERE `swap_family` -- voor de "Andere opties"-groep (bv. chocopasta
+  /// -> smeerkaas of pindakaas). Alleen zinvol als [productForm] bekend is.
+  Future<List<SwapCandidate>> getCandidatesForOtherForm({
+    required String excludeBarcode,
+    required String productForm,
+    String? excludeSwapFamily,
+    int limit = 40,
+  }) async {
+    if (!_supabase.isAvailable || productForm.isEmpty) return const [];
+    try {
+      var query = _supabase.client
+          .from('product_features')
+          .select('*, products(*)')
+          .eq('product_form', productForm)
+          .eq('is_swap_relevant', true)
+          .neq('barcode', excludeBarcode);
+      if (excludeSwapFamily != null && excludeSwapFamily.isNotEmpty) {
+        query = query.neq('swap_family', excludeSwapFamily);
+      }
+      final rows = await query.order('data_quality_score', ascending: false).limit(limit);
+      return (rows as List)
+          .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// De actieve scoregewichten (`swap_score_weights`), met veilige fallback.
   Future<SwapScoreWeights> getActiveWeights() async {
     if (!_supabase.isAvailable) return SwapScoreWeights.fallback;

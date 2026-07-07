@@ -9,19 +9,56 @@ import 'package:bitewise/features/sync/application/sync_coordinator.dart';
 import 'package:bitewise/features/tracker/data/day_logs_repository.dart';
 import 'package:bitewise/features/tracker/domain/meal_type.dart';
 
+/// Nederlandse labels voor `snack_type` (zie `feature_vocabulary`), voor het
+/// categoriefilter. Onbekende/nieuwe waarden vallen terug op de ruwe waarde.
+const Map<String, String> _snackTypeLabels = {
+  'zuivel_toetje': 'Zuivel (toetje)',
+  'zuiveldrank': 'Zuiveldrank',
+  'zoete_snack': 'Zoete snack',
+  'chocolade': 'Chocolade',
+  'hartige_snack': 'Hartige snack',
+  'snoep': 'Snoep',
+  'frisdrank': 'Frisdrank',
+  'ontbijtgranen': 'Ontbijtgranen',
+  'kaas': 'Kaas',
+  'sap': 'Sap',
+  'noten_zaden': 'Noten & zaden',
+  'warme_drank': 'Warme drank',
+  'fruit': 'Fruit',
+  'reep': 'Reep',
+  'ijs': 'IJs',
+  'maaltijd_component': 'Maaltijd',
+  'groente': 'Groente',
+  'water': 'Water',
+  'overig': 'Overig',
+  'brood_bakkerij': 'Brood & bakkerij',
+  'vleeswaren_beleg': 'Vleeswaren & beleg',
+  'alcohol': 'Alcohol',
+  'supplement': 'Supplement',
+};
+
 /// Toont de rule-based SwapScore-aanbevelingen (zie SwapScoreCalculator) als
 /// dé aanbeveling. Het oude, craving-gebaseerde `recommend_swaps`-pad leverde
 /// aantoonbaar onzinnige cross-categorie "swaps" (bv. snoep -> komkommer) --
 /// zie het projectgeheugen voor de root cause -- en wordt hier niet meer
 /// aangeroepen.
-class SwapScreen extends ConsumerWidget {
+class SwapScreen extends ConsumerStatefulWidget {
   const SwapScreen({required this.barcode, super.key});
 
   final String barcode;
 
+  @override
+  ConsumerState<SwapScreen> createState() => _SwapScreenState();
+}
+
+class _SwapScreenState extends ConsumerState<SwapScreen> {
+  /// Leeg = nog geen categorie gekozen. Meerdere `snack_type`-waarden
+  /// tegelijk aan te vinken (bv. Zuivel + Fruit samen doorzoeken).
+  final Set<String> _snackTypeFilters = {};
+
   /// Logt een gekozen swap direct in het daglog (per 100g-waarden, zelfde
   /// eenvoudige semantiek als voorheen: 1 regel, geen gramgewicht-schaling).
-  Future<void> _logSwap(WidgetRef ref, BuildContext context, SwapCandidate item) async {
+  Future<void> _logSwap(SwapCandidate item) async {
     final meal = MealType.suggestForNow();
     await ref.read(dayLogsRepositoryProvider).logEntry(
           productName: item.name,
@@ -34,15 +71,15 @@ class SwapScreen extends ConsumerWidget {
           fat: item.fat100 ?? 0,
         );
     ref.read(syncCoordinatorProvider).onLogsChanged();
-    if (!context.mounted) return;
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${item.name} toegevoegd aan ${meal.label}')),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final outcome = ref.watch(ruleBasedSwapProvider(barcode));
+  Widget build(BuildContext context) {
+    final outcome = ref.watch(ruleBasedSwapProvider(widget.barcode));
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -57,7 +94,7 @@ class SwapScreen extends ConsumerWidget {
             title: 'Er ging iets mis',
             body: 'De aanbevelingen konden niet geladen worden.',
             action: TextButton.icon(
-              onPressed: () => ref.invalidate(ruleBasedSwapProvider(barcode)),
+              onPressed: () => ref.invalidate(ruleBasedSwapProvider(widget.barcode)),
               icon: const Icon(Icons.refresh),
               label: const Text('Opnieuw proberen'),
             ),
@@ -74,18 +111,84 @@ class SwapScreen extends ConsumerWidget {
                 title: 'Er ging iets mis',
                 body: 'De aanbevelingen konden niet geladen worden.',
               ),
-            RuleBasedSwapFound(:final groups) => ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                children: [
-                  for (final group in groups) _GroupSection(
-                    group: group,
-                    onLog: (item) => _logSwap(ref, context, item),
-                  ),
-                ],
-              ),
+            RuleBasedSwapFound(:final groups, :final allRanked, :final source, :final configs) =>
+              _buildFound(groups, allRanked, source, configs),
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildFound(
+    List<SwapRecommendationGroup> groups,
+    List<SwapScoreResult> allRanked,
+    SwapCandidate source,
+    List<Map<String, dynamic>> configs,
+  ) {
+    // Beschikbare filter-opties: alleen snack_types die daadwerkelijk
+    // voorkomen onder de kandidaten (geen lege keuzes tonen).
+    final availableTypes = <String>{};
+    for (final r in allRanked) {
+      final t = r.candidate.features.snackType;
+      if (t != null && t.isNotEmpty) availableTypes.add(t);
+    }
+    final sortedTypes = availableTypes.toList()
+      ..sort((a, b) => (_snackTypeLabels[a] ?? a).compareTo(_snackTypeLabels[b] ?? b));
+
+    // De vaste groepen (Minder kcal, Meer eiwit, Minder suiker, Overall,
+    // Andere opties) blijven ALTIJD zichtbaar. De categorie-chips zijn een
+    // los, extra zoekmenu eronder -- geen vervanging -- waarmee je zelf nog
+    // een alternatief kunt opzoeken, eventueel over meerdere categorieën
+    // tegelijk (bv. Zuivel + Fruit). Zelfde 4-subgroepen-logica, herberekend
+    // op alleen de gekozen categorieën, met een ruimere limiet (10 i.p.v. 5).
+    final extraGroups = _snackTypeFilters.isEmpty
+        ? const <SwapRecommendationGroup>[]
+        : buildRecommendationGroups(
+            configs: configs,
+            source: source,
+            ranked: allRanked
+                .where((r) => _snackTypeFilters.contains(r.candidate.features.snackType))
+                .toList(),
+            perGroupLimit: 10,
+          );
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        for (final group in groups) _GroupSection(group: group, onLog: _logSwap),
+        if (sortedTypes.length > 1) ...[
+          const Divider(height: 24),
+          const Text('Extra alternatief zoeken',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.navy)),
+          const SizedBox(height: 4),
+          const Text('Vink één of meer categorieën aan.',
+              style: TextStyle(color: AppColors.slate, fontSize: 12)),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final t in sortedTypes)
+                FilterChip(
+                  label: Text(_snackTypeLabels[t] ?? t),
+                  selected: _snackTypeFilters.contains(t),
+                  onSelected: (selected) => setState(() {
+                    if (selected) {
+                      _snackTypeFilters.add(t);
+                    } else {
+                      _snackTypeFilters.remove(t);
+                    }
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (extraGroups.isEmpty && _snackTypeFilters.isNotEmpty)
+            const Text('Niks gevonden in deze categorie(ën).',
+                style: TextStyle(color: AppColors.slate)),
+          for (final group in extraGroups) _GroupSection(group: group, onLog: _logSwap),
+        ],
+      ],
     );
   }
 }

@@ -28,8 +28,17 @@ class RuleBasedSwapError extends RuleBasedSwapOutcome {
 }
 
 class RuleBasedSwapFound extends RuleBasedSwapOutcome {
-  const RuleBasedSwapFound(this.groups);
+  const RuleBasedSwapFound(this.groups, this.allRanked, this.source, this.configs);
   final List<SwapRecommendationGroup> groups;
+
+  /// Volledige, ongecapte, op score gesorteerde kandidatenlijst (incl. de
+  /// cross-familie "Andere opties"-kandidaten) -- gebruikt door het
+  /// categoriefilter op het scherm om [buildRecommendationGroups] opnieuw
+  /// aan te roepen, geschaald naar één `snack_type`, los van de vaste
+  /// 5-per-groep-limiet van [groups].
+  final List<SwapScoreResult> allRanked;
+  final SwapCandidate source;
+  final List<Map<String, dynamic>> configs;
 }
 
 class SwapRecommendationGroup {
@@ -61,6 +70,104 @@ bool? _boolForColumn(ProductFeatures f, String? column) => switch (column) {
       'is_less_processed' => f.isLessProcessed,
       _ => null,
     };
+
+/// Bevestigt dat de kandidaat ook daadwerkelijk BETER is dan het bronproduct
+/// op dit specifieke punt -- niet alleen absoluut "laag"/"hoog" op zichzelf.
+///
+/// Bug gevonden: "Minder kcal" toonde eerder kandidaten die zelf onder de
+/// vaste drempel (bv. 150 kcal/100g) zaten, ook als het bronproduct fors
+/// minder kcal had (bv. 80). De groepsnaam belooft een vergelijking t.o.v.
+/// het bronproduct -- die vergelijking ontbrak volledig. Onbekend (een van
+/// beide null) = kan niet bevestigen = hoort niet in deze groep, ook al is
+/// de absolute vlag toevallig waar.
+bool _relativeImprovement(String? column, SwapCandidate source, SwapCandidate candidate) {
+  switch (column) {
+    case 'is_low_sugar':
+      final s = source.sugar100, c = candidate.sugar100;
+      return s != null && c != null && c < s;
+    case 'is_high_protein':
+      final s = source.protein100, c = candidate.protein100;
+      return s != null && c != null && c > s;
+    case 'is_low_kcal':
+      final s = source.kcal100, c = candidate.kcal100;
+      return s != null && c != null && c < s;
+    case 'is_less_processed':
+      final s = source.features.processingQualityScore, c = candidate.features.processingQualityScore;
+      return s != null && c != null && c > s;
+    default:
+      return true;
+  }
+}
+
+/// Voor de "Andere opties"-groep: is de kandidaat op minstens één punt
+/// (kcal/suiker/eiwit) aantoonbaar beter dan het bronproduct? Dit is de enige
+/// rechtvaardiging om een andere `swap_family` (bv. smeerkaas i.p.v.
+/// chocopasta) toch te tonen -- puur "andere vorm" zonder verbetering is
+/// geen zinnige suggestie.
+bool _hasAnyNutritionImprovement(SwapCandidate source, SwapCandidate candidate) {
+  final sSugar = source.sugar100, cSugar = candidate.sugar100;
+  if (sSugar != null && cSugar != null && cSugar < sSugar) return true;
+  final sKcal = source.kcal100, cKcal = candidate.kcal100;
+  if (sKcal != null && cKcal != null && cKcal < sKcal) return true;
+  final sProtein = source.protein100, cProtein = candidate.protein100;
+  if (sProtein != null && cProtein != null && cProtein > sProtein) return true;
+  return false;
+}
+
+/// Groepeert een (eventueel al op categorie gefilterde) kandidatenlijst
+/// volgens de `swap_recommendation_groups`-config -- Minder kcal/Meer
+/// eiwit/Minder suiker/Overall, elk relatief t.o.v. [source] (zie
+/// [_relativeImprovement]). Herbruikbaar: de hoofdweergave gebruikt dit met
+/// de volledige kandidatenpool en limiet 5; het categoriefilter op het
+/// scherm roept dit opnieuw aan met alleen kandidaten van één `snack_type`
+/// en een ruimere limiet (bv. 10), zodat "Minder kcal binnen Zuivel" enz.
+/// niet beperkt blijft tot wat toevallig in de top-5-overall zat.
+List<SwapRecommendationGroup> buildRecommendationGroups({
+  required List<Map<String, dynamic>> configs,
+  required SwapCandidate source,
+  required List<SwapScoreResult> ranked,
+  int perGroupLimit = 5,
+}) {
+  final groups = <SwapRecommendationGroup>[];
+  for (final config in configs) {
+    final column = config['rule_column'] as String?;
+    final tag = config['rule_swap_tag'] as String?;
+    final direction = config['rule_direction'] as String?;
+
+    List<SwapScoreResult> matches;
+    if (column == null && tag == null && direction == null) {
+      matches = ranked; // "Overall betere suggestie" = de algehele ranking.
+    } else {
+      matches = ranked.where((r) {
+        if (column != null &&
+            _boolForColumn(r.candidate.features, column) == true &&
+            _relativeImprovement(column, source, r.candidate)) {
+          return true;
+        }
+        if (tag != null && r.candidate.features.swapTags.contains(tag)) return true;
+        if (direction != null &&
+            r.candidate.features.recommendedSwapDirections.contains(direction)) {
+          return true;
+        }
+        return false;
+      }).toList();
+    }
+    if (matches.isEmpty) continue;
+    groups.add(SwapRecommendationGroup(
+      slug: config['slug'] as String,
+      label: config['label'] as String,
+      results: matches.take(perGroupLimit).toList(),
+    ));
+  }
+  return groups;
+}
+
+const List<Map<String, dynamic>> fallbackGroupConfigs = [
+  {'slug': 'minder_kcal', 'label': 'Minder kcal', 'rule_column': 'is_low_kcal'},
+  {'slug': 'meer_eiwit', 'label': 'Meer eiwit', 'rule_column': 'is_high_protein'},
+  {'slug': 'minder_suiker', 'label': 'Minder suiker', 'rule_column': 'is_low_sugar'},
+  {'slug': 'beste_keuze_vandaag', 'label': 'Overall betere suggestie'},
+];
 
 /// Berekent en groepeert swap-aanbevelingen voor een gescand product.
 final ruleBasedSwapProvider =
@@ -103,45 +210,48 @@ final ruleBasedSwapProvider =
   );
   if (ranked.isEmpty) return const RuleBasedSwapNotFound();
 
-  const fallbackGroups = [
-    {'slug': 'beste_keuze_vandaag', 'label': 'Beste keuze voor vandaag'},
-    {'slug': 'minder_suiker', 'label': 'Minder suiker', 'rule_column': 'is_low_sugar'},
-    {'slug': 'meer_eiwit', 'label': 'Meer eiwit', 'rule_column': 'is_high_protein'},
-    {'slug': 'minder_kcal', 'label': 'Minder kcal', 'rule_column': 'is_low_kcal'},
-    {'slug': 'minder_bewerkt', 'label': 'Minder bewerkt', 'rule_column': 'is_less_processed'},
-  ];
-  final configs = groupConfigs.isNotEmpty ? groupConfigs : fallbackGroups;
+  final configs = groupConfigs.isNotEmpty ? groupConfigs : fallbackGroupConfigs;
+  final groups = buildRecommendationGroups(
+    configs: configs,
+    source: source,
+    ranked: ranked,
+    perGroupLimit: 5,
+  );
 
-  final groups = <SwapRecommendationGroup>[];
-  for (final config in configs) {
-    final column = config['rule_column'] as String?;
-    final tag = config['rule_swap_tag'] as String?;
-    final direction = config['rule_direction'] as String?;
-
-    List<SwapScoreResult> matches;
-    if (column == null && tag == null && direction == null) {
-      matches = ranked; // "Beste keuze voor vandaag" = de algehele ranking.
-    } else {
-      matches = ranked.where((r) {
-        if (column != null && _boolForColumn(r.candidate.features, column) == true) {
-          return true;
-        }
-        if (tag != null && r.candidate.features.swapTags.contains(tag)) return true;
-        if (direction != null &&
-            r.candidate.features.recommendedSwapDirections.contains(direction)) {
-          return true;
-        }
-        return false;
-      }).toList();
+  // "Andere opties": bewust cross-familie (bv. chocopasta -> smeerkaas of
+  // pindakaas) -- zelfde product_form (smeerbaar), andere swap_family, maar
+  // alleen getoond als er een aantoonbare voedingsverbetering is.
+  var otherOptions = <SwapScoreResult>[];
+  final sourceForm = source.features.productForm;
+  if (sourceForm != null && sourceForm.isNotEmpty) {
+    final otherFormCandidates = await service.getCandidatesForOtherForm(
+      excludeBarcode: source.barcode,
+      productForm: sourceForm,
+      excludeSwapFamily: source.features.swapFamily,
+    );
+    otherOptions = otherFormCandidates
+        .where((c) => _hasAnyNutritionImprovement(source, c))
+        .map((c) => calculator.scoreCrossForm(source: source, candidate: c, goal: goal, dayContext: dayContext))
+        .toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+    if (otherOptions.isNotEmpty) {
+      groups.add(SwapRecommendationGroup(
+        slug: 'andere_opties',
+        label: 'Andere opties',
+        results: otherOptions.take(5).toList(),
+      ));
     }
-    if (matches.isEmpty) continue;
-    groups.add(SwapRecommendationGroup(
-      slug: config['slug'] as String,
-      label: config['label'] as String,
-      results: matches.take(5).toList(),
-    ));
   }
 
   if (groups.isEmpty) return const RuleBasedSwapNotFound();
-  return RuleBasedSwapFound(groups);
+
+  // Volledige lijst voor het categoriefilter: hoofdranking + cross-familie
+  // opties, gededupliceerd op barcode, opnieuw op score gesorteerd.
+  final seen = <String>{};
+  final allRanked = [...ranked, ...otherOptions]
+      .where((r) => seen.add(r.candidate.barcode))
+      .toList()
+    ..sort((a, b) => b.score.compareTo(a.score));
+
+  return RuleBasedSwapFound(groups, allRanked, source, configs);
 });

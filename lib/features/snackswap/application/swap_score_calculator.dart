@@ -59,6 +59,29 @@ class SwapScoreCalculator {
       );
     }
 
+    return _scoreWithoutGate(source: source, candidate: candidate, goal: goal, dayContext: dayContext);
+  }
+
+  /// Voor de "Andere opties"-groep: dezelfde berekening als [score], maar
+  /// bewust ZONDER de swap_family/snack_type/category_cluster-poort. Alleen
+  /// gebruiken voor kandidaten die de aanroeper al zelf heeft gefilterd op
+  /// gelijke `product_form` (zelfde vorm, bv. smeerbaar) en een aantoonbare
+  /// voedingsverbetering -- dus bewust cross-familie (bv. chocopasta ->
+  /// smeerkaas), niet zomaar alles.
+  SwapScoreResult scoreCrossForm({
+    required SwapCandidate source,
+    required SwapCandidate candidate,
+    required SwapGoal goal,
+    SwapDayContext dayContext = const SwapDayContext(),
+  }) =>
+      _scoreWithoutGate(source: source, candidate: candidate, goal: goal, dayContext: dayContext);
+
+  SwapScoreResult _scoreWithoutGate({
+    required SwapCandidate source,
+    required SwapCandidate candidate,
+    required SwapGoal goal,
+    required SwapDayContext dayContext,
+  }) {
     final nutrition = _nutritionImprovement(source, candidate);
     final goalMatch = _goalMatch(goal, source, candidate);
     final day = _dayContext(dayContext, source, candidate);
@@ -84,6 +107,13 @@ class SwapScoreCalculator {
             totalWeight;
 
     final reasons = <String>[];
+    if (source.kcal100 != null &&
+        candidate.kcal100 != null &&
+        candidate.kcal100! < source.kcal100! &&
+        source.kcal100! > 0) {
+      final pct = (1 - candidate.kcal100! / source.kcal100!) * 100;
+      reasons.add('${pct.round()}% minder kcal');
+    }
     if (source.sugar100 != null &&
         candidate.sugar100 != null &&
         candidate.sugar100! < source.sugar100!) {
