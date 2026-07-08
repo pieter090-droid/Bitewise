@@ -35,7 +35,7 @@ class SwapScoreCalculator {
     required SwapGoal goal,
     SwapDayContext dayContext = const SwapDayContext(),
   }) =>
-      _calculate(source, candidate, goal, isOtherOption: true);
+      _calculate(source, candidate, goal);
 
   List<SwapScoreResult> rankCandidates({
     required SwapCandidate source,
@@ -51,8 +51,7 @@ class SwapScoreCalculator {
         ..sort((a, b) => b.score.compareTo(a.score)));
 
   SwapScoreResult _calculate(
-      SwapCandidate source, SwapCandidate candidate, SwapGoal goal,
-      {bool isOtherOption = false}) {
+      SwapCandidate source, SwapCandidate candidate, SwapGoal goal) {
     final pair = _NutritionPair.of(source, candidate);
     final codes = <String>[];
     final warnings = <String>[];
@@ -75,16 +74,16 @@ class SwapScoreCalculator {
         _notHigher(pair.source.saturatedFat, pair.candidate.saturatedFat);
 
     bool threshold = true;
-    var penalty = 0.0;
+    var hardPenalty = false;
     double score;
     switch (goal) {
       case SwapGoal.meerEiwit:
         threshold =
             _atLeastGain(pair.source.protein, pair.candidate.protein, .20, 2);
-        penalty += _increasePenalty(pair.source.kcal, pair.candidate.kcal, .15);
-        penalty +=
-            _increasePenalty(pair.source.sugar, pair.candidate.sugar, .20);
-        penalty += _increasePenalty(pair.source.salt, pair.candidate.salt, .20);
+        hardPenalty =
+            _increasesOver(pair.source.kcal, pair.candidate.kcal, .15) ||
+                _increasesOver(pair.source.sugar, pair.candidate.sugar, .20) ||
+                _increasesOver(pair.source.salt, pair.candidate.salt, .20);
         final densityGain = _proteinDensityGain(pair);
         score = proteinGain * 45 +
             densityGain * 25 +
@@ -95,12 +94,10 @@ class SwapScoreCalculator {
       case SwapGoal.minderKcal:
         threshold =
             _atLeastReduction(pair.source.kcal, pair.candidate.kcal, .10, 25);
-        penalty +=
-            _decreasePenalty(pair.source.protein, pair.candidate.protein, .30);
-        penalty +=
-            _decreasePenalty(pair.source.fiber, pair.candidate.fiber, .30);
-        penalty +=
-            _increasePenalty(pair.source.sugar, pair.candidate.sugar, .20);
+        hardPenalty =
+            _dropsOver(pair.source.protein, pair.candidate.protein, .30) ||
+                _dropsOver(pair.source.fiber, pair.candidate.fiber, .30) ||
+                _increasesOver(pair.source.sugar, pair.candidate.sugar, .20);
         score = kcalReduction * 60 +
             proteinRetention * 15 +
             fiberRetention * 10 +
@@ -109,29 +106,31 @@ class SwapScoreCalculator {
       case SwapGoal.minderSuiker:
         threshold =
             _atLeastReduction(pair.source.sugar, pair.candidate.sugar, .20, 2);
-        penalty += _increasePenalty(pair.source.kcal, pair.candidate.kcal, .15);
-        penalty += _increasePenalty(
-            pair.source.saturatedFat, pair.candidate.saturatedFat, .20);
+        hardPenalty =
+            _increasesOver(pair.source.kcal, pair.candidate.kcal, .15) ||
+                _increasesOver(
+                    pair.source.saturatedFat, pair.candidate.saturatedFat, .20);
         score = sugarReduction * 65 +
             kcalRetention * 15 +
             _average([proteinGain, fiberGain]) * 10 +
             _average([satFatRetention, saltRetention]) * 10;
         if (sugarReduction > 0) codes.add('less_sugar');
       case SwapGoal.besteOverall:
-        score = _overallScore(source, pair) * .75 +
-            similarityScore(source.features, candidate.features) * .20 +
-            _dataAvailability(pair) * .05;
-        threshold = _hasMeaningfulImprovement(pair);
+        final overall = _overallScore(source, candidate, pair);
+        if (overall == null) {
+          return _excluded(candidate, 'unsupported_category_cluster');
+        }
+        score = overall;
+        threshold = score >= 8;
     }
 
-    if (!threshold && !isOtherOption) {
+    if (!threshold) {
       return _excluded(candidate, 'minimum_improvement_not_met');
     }
-    if (penalty > 0) codes.add('hard_penalty');
-    final finalScore = _clamp(score - penalty, 0, 100);
-    if (finalScore <= 0 && !isOtherOption) {
+    if (hardPenalty) {
       return _excluded(candidate, 'hard_penalty');
     }
+    final finalScore = _clamp(score, 0, 100);
 
     if (fiberGain > 0) codes.add('more_fiber');
     if (saltRetention > .5) codes.add('salt_preserved');
@@ -154,27 +153,40 @@ class SwapScoreCalculator {
     );
   }
 
-  static double _overallScore(SwapCandidate source, _NutritionPair p) {
-    final cluster = source.features.categoryCluster ?? 'overig';
+  static double? _overallScore(
+      SwapCandidate source, SwapCandidate candidate, _NutritionPair p) {
+    final cluster = source.features.categoryCluster;
     final sugar = _reduction(p.source.sugar, p.candidate.sugar);
     final kcal = _reduction(p.source.kcal, p.candidate.kcal);
     final protein = _gain(p.source.protein, p.candidate.protein);
     final fiber = _gain(p.source.fiber, p.candidate.fiber);
     final salt = _reduction(p.source.salt, p.candidate.salt);
     final sat = _reduction(p.source.saturatedFat, p.candidate.saturatedFat);
+    final similarity =
+        similarityScore(source.features, candidate.features) / 100;
     return switch (cluster) {
-      'drank' => (sugar * 45 + kcal * 35 + protein * 10 + fiber * 10),
-      'zuivel' => (protein * 35 + sugar * 25 + kcal * 20 + sat * 20),
-      'hartig' => (salt * 35 + kcal * 25 + sat * 20 + protein * 20),
-      'fruit_groente' => (fiber * 40 + sugar * 20 + kcal * 20 + protein * 20),
-      'maaltijd' => (kcal * 25 + protein * 30 + fiber * 25 + salt * 20),
-      'zoet' => (sugar * 40 + kcal * 25 + sat * 20 + fiber * 15),
-      _ => (sugar * 20 +
-          kcal * 20 +
+      'beverages' =>
+        sugar * 45 + kcal * 35 + sat * 5 + salt * 5 + similarity * 10,
+      'sweet_snacks' =>
+        sugar * 35 + kcal * 25 + sat * 20 + fiber * 10 + protein * 5 + salt * 5,
+      'savory_snacks' =>
+        kcal * 25 + salt * 30 + sat * 20 + fiber * 15 + protein * 10,
+      'dairy' =>
+        protein * 25 + sugar * 25 + kcal * 20 + sat * 15 + fiber * 5 + salt * 5,
+      'bakery_grains' => fiber * 30 +
           protein * 20 +
-          fiber * 20 +
-          salt * 10 +
-          sat * 10),
+          kcal * 15 +
+          sugar * 15 +
+          salt * 15 +
+          sat * 5,
+      'spreads_sauces' => kcal * 25 +
+          sugar * 25 +
+          sat * 20 +
+          protein * 10 +
+          fiber * 10 +
+          salt * 10,
+      'meals' => kcal * 25 + protein * 20 + salt * 25 + sat * 15 + fiber * 15,
+      _ => null,
     };
   }
 
@@ -191,12 +203,6 @@ class SwapScoreCalculator {
       SwapGoal.besteOverall => '$family met een betere voedingsbalans $basis.',
     };
   }
-
-  static bool _hasMeaningfulImprovement(_NutritionPair p) =>
-      _atLeastReduction(p.source.kcal, p.candidate.kcal, .10, 25) ||
-      _atLeastReduction(p.source.sugar, p.candidate.sugar, .20, 2) ||
-      _atLeastGain(p.source.protein, p.candidate.protein, .20, 2) ||
-      _atLeastGain(p.source.fiber, p.candidate.fiber, .20, 2);
 
   static double _proteinDensityGain(_NutritionPair p) {
     final sk = p.source.kcal, ck = p.candidate.kcal;
@@ -233,10 +239,10 @@ class SwapScoreCalculator {
       s != null &&
       c != null &&
       ((s > 0 && c <= s * (1 - pct)) || s - c >= absolute);
-  static double _increasePenalty(double? s, double? c, double limit) =>
-      s != null && c != null && s > 0 && c > s * (1 + limit) ? 35 : 0;
-  static double _decreasePenalty(double? s, double? c, double limit) =>
-      s != null && c != null && s > 0 && c < s * (1 - limit) ? 35 : 0;
+  static bool _increasesOver(double? s, double? c, double limit) =>
+      s != null && c != null && s > 0 && c > s * (1 + limit);
+  static bool _dropsOver(double? s, double? c, double limit) =>
+      s != null && c != null && s > 0 && c < s * (1 - limit);
   static double _average(List<double> values) =>
       values.reduce((a, b) => a + b) / values.length;
   static double _dataAvailability(_NutritionPair p) {

@@ -60,10 +60,20 @@ void main() {
     expect(result.score, greaterThan(0));
   });
 
-  test('overall databeschikbaarheid is vijf procent en verzadigt score niet',
-      () {
-    final source = product('a', kcal: 500, sugar: 50, protein: 5, fiber: 2);
-    final candidate = product('b', kcal: 450, sugar: 40, protein: 6, fiber: 3);
+  test('harde penalty sluit kandidaat uit zonder puntenaftrek', () {
+    final source = product('a', protein: 10, kcal: 100);
+    final candidate = product('b', protein: 13, kcal: 120);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.meerEiwit);
+    expect(result.isExcluded, isTrue);
+    expect(result.excludedReason, 'hard_penalty');
+  });
+
+  test('overall gebruikt de opgegeven spreads_sauces-gewichten', () {
+    final source = product('a',
+        cluster: 'spreads_sauces', kcal: 500, sugar: 50, protein: 5, fiber: 2);
+    final candidate = product('b',
+        cluster: 'spreads_sauces', kcal: 450, sugar: 40, protein: 6, fiber: 3);
     final result = calculator.score(
         source: source, candidate: candidate, goal: SwapGoal.besteOverall);
     expect(result.isExcluded, isFalse);
@@ -74,6 +84,7 @@ void main() {
 SwapCandidate product(
   String barcode, {
   String family = 'test_family',
+  String? cluster,
   double? kcal,
   double? protein,
   double? sugar,
@@ -99,5 +110,8 @@ SwapCandidate product(
       proteinServing: proteinServing,
       sugarServing: sugarServing,
       features: ProductFeatures(
-          barcode: barcode, swapFamily: family, isSwapRelevant: true),
+          barcode: barcode,
+          swapFamily: family,
+          categoryCluster: cluster,
+          isSwapRelevant: true),
     );
