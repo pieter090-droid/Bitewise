@@ -273,17 +273,54 @@ class SnackSwapService {
     }
   }
 
-  /// Kandidaten met dezelfde `product_form` (bv. "spread") maar bewust een
-  /// ANDERE `swap_family` -- voor de "Andere opties"-groep (bv. chocopasta
-  /// -> smeerkaas of pindakaas). Alleen zinvol als [productForm] bekend is.
+  /// Haalt de expliciete `related_families` op voor een `swap_family` uit
+  /// `swap_family_mapping` -- de bron van waarheid voor "Andere opties"
+  /// (bv. chocolate_spreads -> [nut_butters, jams_fruit_spreads, ...]).
+  Future<List<String>> getRelatedFamilies(String swapFamily) async {
+    if (!_supabase.isAvailable || swapFamily.isEmpty) return const [];
+    try {
+      final rows = await _supabase.client
+          .from('swap_family_mapping')
+          .select('related_families')
+          .eq('swap_family', swapFamily)
+          .limit(1);
+      final list = rows as List;
+      if (list.isEmpty) return const [];
+      final related = (list.first as Map)['related_families'] as List?;
+      return related?.map((e) => e.toString()).toList() ?? const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Kandidaten voor "Andere opties": primair via de expliciete
+  /// `related_families`-lijst (bv. chocolate_spreads -> nut_butters); als die
+  /// leeg is (bv. onbekend `swap_family`), valt terug op gelijke
+  /// `product_form` met een andere `swap_family` als losser vangnet.
   Future<List<SwapCandidate>> getCandidatesForOtherForm({
     required String excludeBarcode,
     required String productForm,
+    List<String> relatedFamilies = const [],
     String? excludeSwapFamily,
     int limit = 40,
   }) async {
-    if (!_supabase.isAvailable || productForm.isEmpty) return const [];
+    if (!_supabase.isAvailable) return const [];
     try {
+      if (relatedFamilies.isNotEmpty) {
+        final rows = await _supabase.client
+            .from('product_features')
+            .select('*, products(*)')
+            .inFilter('swap_family', relatedFamilies)
+            .eq('is_swap_relevant', true)
+            .neq('barcode', excludeBarcode)
+            .order('data_quality_score', ascending: false)
+            .limit(limit);
+        final candidates = (rows as List)
+            .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+            .toList();
+        if (candidates.isNotEmpty) return candidates;
+      }
+      if (productForm.isEmpty) return const [];
       var query = _supabase.client
           .from('product_features')
           .select('*, products(*)')

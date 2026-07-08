@@ -219,15 +219,21 @@ final ruleBasedSwapProvider =
   );
 
   // "Andere opties": bewust cross-familie (bv. chocopasta -> smeerkaas of
-  // pindakaas) -- zelfde product_form (smeerbaar), andere swap_family, maar
-  // alleen getoond als er een aantoonbare voedingsverbetering is.
+  // pindakaas), primair via de expliciete `related_families`-lijst uit
+  // swap_family_mapping (bron van waarheid), met product_form als losser
+  // vangnet. Alleen getoond als er een aantoonbare voedingsverbetering is.
   var otherOptions = <SwapScoreResult>[];
   final sourceForm = source.features.productForm;
+  final sourceFamily = source.features.swapFamily;
   if (sourceForm != null && sourceForm.isNotEmpty) {
+    final relatedFamilies = sourceFamily != null && sourceFamily.isNotEmpty
+        ? await service.getRelatedFamilies(sourceFamily)
+        : const <String>[];
     final otherFormCandidates = await service.getCandidatesForOtherForm(
       excludeBarcode: source.barcode,
       productForm: sourceForm,
-      excludeSwapFamily: source.features.swapFamily,
+      relatedFamilies: relatedFamilies,
+      excludeSwapFamily: sourceFamily,
     );
     otherOptions = otherFormCandidates
         .where((c) => _hasAnyNutritionImprovement(source, c))
