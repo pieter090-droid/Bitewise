@@ -34,7 +34,8 @@ class SwapScoreWeights {
     double n(Object? v, double fallback) =>
         v == null ? fallback : (v as num).toDouble();
     return SwapScoreWeights(
-      goalMatch: n(json['weight_goal_match'], SwapScoreWeights.fallback.goalMatch),
+      goalMatch:
+          n(json['weight_goal_match'], SwapScoreWeights.fallback.goalMatch),
       nutritionImprovement: n(json['weight_nutrition_improvement'],
           SwapScoreWeights.fallback.nutritionImprovement),
       dayContext:
@@ -69,6 +70,9 @@ class SwapScoreResult {
     required this.processingQuality,
     required this.dataQuality,
     this.reasons = const [],
+    this.reasonCodes = const [],
+    this.userReason,
+    this.usesServingData = false,
     this.warnings = const [],
     this.excludedReason,
   });
@@ -87,20 +91,23 @@ class SwapScoreResult {
   final double dataQuality;
 
   final List<String> reasons;
+  final List<String> reasonCodes;
+  final String? userReason;
+  final bool usesServingData;
   final List<String> warnings;
   final String? excludedReason;
 
   bool get isExcluded => excludedReason != null;
 }
 
-/// De vijf gebruikersdoelen die de scorefunctie kent (zie migratie 0009).
+/// De vier expliciete doelen uit de SnackSwap-keuzestap.
 enum SwapGoal {
-  minderSuiker('minder_suiker'),
-  afvallen('afvallen'),
-  spieropbouw('spieropbouw'),
-  gezonderEten('gezonder_eten'),
-  gewichtBehouden('gewicht_behouden');
+  meerEiwit('meer_eiwit', 'Meer eiwit'),
+  minderKcal('minder_kcal', 'Minder kcal'),
+  minderSuiker('minder_suiker', 'Minder suiker'),
+  besteOverall('beste_overall', 'Beste overall swap');
 
-  const SwapGoal(this.value);
+  const SwapGoal(this.value, this.label);
   final String value;
+  final String label;
 }

@@ -1,0 +1,152 @@
+import 'package:bitewise/features/snackswap/application/swap_score_calculator.dart';
+import 'package:bitewise/features/snackswap/domain/product_features.dart';
+import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  const calculator = SwapScoreCalculator();
+
+  test('meer eiwit vereist minimaal 20 procent of 2 gram winst', () {
+    final source = product('a', protein: 10, kcal: 200);
+    final tooSmall = product('b', protein: 11, kcal: 200);
+    final enough = product('c', protein: 12, kcal: 200);
+
+    expect(
+        calculator
+            .score(
+                source: source, candidate: tooSmall, goal: SwapGoal.meerEiwit)
+            .isExcluded,
+        isTrue);
+    final result = calculator.score(
+        source: source, candidate: enough, goal: SwapGoal.meerEiwit);
+    expect(result.isExcluded, isFalse);
+    expect(result.reasonCodes, contains('more_protein'));
+  });
+
+  test('gebruikt portiedata wanneer beide porties betrouwbaar zijn', () {
+    final source =
+        product('a', kcal: 400, servingQuantity: 30, kcalServing: 120);
+    final candidate =
+        product('b', kcal: 350, servingQuantity: 30, kcalServing: 90);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.minderKcal);
+    expect(result.isExcluded, isFalse);
+    expect(result.usesServingData, isTrue);
+  });
+
+  test('900 gram broodportie valt terug op per 100 gram', () {
+    final source = product('a',
+        family: 'bread_bakery',
+        kcal: 250,
+        servingQuantity: 900,
+        kcalServing: 2250);
+    final candidate = product('b',
+        family: 'bread_bakery',
+        kcal: 200,
+        servingQuantity: 35,
+        kcalServing: 70);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.minderKcal);
+    expect(result.isExcluded, isFalse);
+    expect(result.usesServingData, isFalse);
+  });
+
+  test('ontbrekende niet-doeldata is neutraal en veroorzaakt geen penalty', () {
+    final source = product('a', sugar: 20);
+    final candidate = product('b', sugar: 10);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.minderSuiker);
+    expect(result.isExcluded, isFalse);
+    expect(result.score, greaterThan(0));
+  });
+
+  test('harde penalty sluit kandidaat uit zonder puntenaftrek', () {
+    final source = product('a', protein: 10, kcal: 100);
+    final candidate = product('b', protein: 13, kcal: 120);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.meerEiwit);
+    expect(result.isExcluded, isTrue);
+    expect(result.excludedReason, 'hard_penalty');
+  });
+
+  test('overall gebruikt de hartig-gewichten', () {
+    final source = product('a',
+        cluster: 'hartig', kcal: 500, sugar: 50, protein: 5, fiber: 2);
+    final candidate = product('b',
+        cluster: 'hartig', kcal: 450, sugar: 40, protein: 6, fiber: 3);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.besteOverall);
+    expect(result.isExcluded, isFalse);
+    expect(result.score, lessThan(100));
+  });
+
+  // Regressietest: swap_family_mapping.category_cluster levert altijd een
+  // van deze Nederlandse waarden (nooit de Engelse namen uit een eerder
+  // taxonomievoorbeeld). Als _overallScore ooit weer op Engelse namen zou
+  // schakelen, valt elk van deze clusters terug op _excluded(...), en faalt
+  // deze test meteen in plaats van pas op te vallen met echte productdata.
+  test('overall ondersteunt elk echt category_cluster uit de database', () {
+    for (final cluster in [
+      'drank',
+      'zoet',
+      'hartig',
+      'zuivel',
+      'fruit_groente',
+      'maaltijd',
+      'overig',
+    ]) {
+      final source = product('a',
+          cluster: cluster, kcal: 500, sugar: 50, protein: 5, fiber: 2);
+      final candidate = product('b',
+          cluster: cluster, kcal: 450, sugar: 40, protein: 6, fiber: 3);
+      final result = calculator.score(
+          source: source, candidate: candidate, goal: SwapGoal.besteOverall);
+      expect(result.excludedReason, isNot('unsupported_category_cluster'),
+          reason: 'cluster "$cluster" zou een geldig gewichtsprofiel moeten hebben');
+    }
+  });
+
+  test('overall sluit onbekend/ontbrekend category_cluster uit', () {
+    final source = product('a', cluster: null, kcal: 500);
+    final candidate = product('b', cluster: null, kcal: 450);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.besteOverall);
+    expect(result.isExcluded, isTrue);
+    expect(result.excludedReason, 'unsupported_category_cluster');
+  });
+}
+
+SwapCandidate product(
+  String barcode, {
+  String family = 'test_family',
+  String? cluster,
+  double? kcal,
+  double? protein,
+  double? sugar,
+  double? fiber,
+  double? salt,
+  double? saturatedFat,
+  double? servingQuantity,
+  double? kcalServing,
+  double? proteinServing,
+  double? sugarServing,
+}) =>
+    SwapCandidate(
+      barcode: barcode,
+      name: barcode,
+      kcal100: kcal,
+      protein100: protein,
+      sugar100: sugar,
+      fiber100: fiber,
+      salt100: salt,
+      saturatedFat100: saturatedFat,
+      servingQuantity: servingQuantity,
+      kcalServing: kcalServing,
+      proteinServing: proteinServing,
+      sugarServing: sugarServing,
+      features: ProductFeatures(
+          barcode: barcode,
+          swapFamily: family,
+          categoryCluster: cluster,
+          isSwapRelevant: true),
+    );
