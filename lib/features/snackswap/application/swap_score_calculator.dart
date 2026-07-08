@@ -120,7 +120,7 @@ class SwapScoreCalculator {
       case SwapGoal.besteOverall:
         score = _overallScore(source, pair) * .75 +
             similarityScore(source.features, candidate.features) * .20 +
-            _dataAvailability(pair) * 5;
+            _dataAvailability(pair) * .05;
         threshold = _hasMeaningfulImprovement(pair);
     }
 

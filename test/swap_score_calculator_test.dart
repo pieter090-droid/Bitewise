@@ -59,6 +59,16 @@ void main() {
     expect(result.isExcluded, isFalse);
     expect(result.score, greaterThan(0));
   });
+
+  test('overall databeschikbaarheid is vijf procent en verzadigt score niet',
+      () {
+    final source = product('a', kcal: 500, sugar: 50, protein: 5, fiber: 2);
+    final candidate = product('b', kcal: 450, sugar: 40, protein: 6, fiber: 3);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.besteOverall);
+    expect(result.isExcluded, isFalse);
+    expect(result.score, lessThan(100));
+  });
 }
 
 SwapCandidate product(
