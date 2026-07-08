@@ -6,164 +6,508 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const calculator = SwapScoreCalculator();
 
-  test('meer eiwit vereist minimaal 20 procent of 2 gram winst', () {
-    final source = product('a', protein: 10, kcal: 200);
-    final tooSmall = product('b', protein: 11, kcal: 200);
-    final enough = product('c', protein: 12, kcal: 200);
+  group('kandidatenfilter', () {
+    test('review_required kandidaat wordt niet getoond', () {
+      final source = spread('source');
+      final candidate = spread('candidate', status: 'review_required');
 
-    expect(
-        calculator
-            .score(
-                source: source, candidate: tooSmall, goal: SwapGoal.meerEiwit)
-            .isExcluded,
-        isTrue);
-    final result = calculator.score(
-        source: source, candidate: enough, goal: SwapGoal.meerEiwit);
-    expect(result.isExcluded, isFalse);
-    expect(result.reasonCodes, contains('more_protein'));
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [candidate],
+        goal: SwapGoal.minderSuiker,
+      );
+
+      expect(ranked, isEmpty);
+    });
+
+    test('is_swap_relevant=false kandidaat wordt niet getoond', () {
+      final source = spread('source');
+      final candidate = spread('candidate', isSwapRelevant: false);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [candidate],
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(ranked, isEmpty);
+    });
+
+    test('classification_status=null kandidaat wordt niet getoond', () {
+      final source = spread('source');
+      final candidate = spread('candidate', status: null);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [candidate],
+        goal: SwapGoal.besteOverall,
+      );
+
+      expect(ranked, isEmpty);
+    });
+
+    test('classified + is_swap_relevant=true kandidaat mag meedoen', () {
+      final source = spread('source', sugar: 50);
+      final candidate = spread('candidate', sugar: 20);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [candidate],
+        goal: SwapGoal.minderSuiker,
+      );
+
+      expect(ranked, hasLength(1));
+      expect(ranked.first.isExcluded, isFalse);
+    });
   });
 
-  test('gebruikt portiedata wanneer beide porties betrouwbaar zijn', () {
-    final source =
-        product('a', kcal: 400, servingQuantity: 30, kcalServing: 120);
-    final candidate =
-        product('b', kcal: 350, servingQuantity: 30, kcalServing: 90);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.minderKcal);
-    expect(result.isExcluded, isFalse);
-    expect(result.usesServingData, isTrue);
-  });
+  group('doelen', () {
+    test('Nutella minder suiker rankt lagere suiker spread hoger', () {
+      final source = spread('nutella', sugar: 56, kcal: 540);
+      final lowSugar = spread('low-sugar', sugar: 18, kcal: 520);
+      final highSugar = spread('high-sugar', sugar: 45, kcal: 500);
 
-  test('900 gram broodportie valt terug op per 100 gram', () {
-    final source = product('a',
-        family: 'bread_bakery',
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [highSugar, lowSugar],
+        goal: SwapGoal.minderSuiker,
+      );
+
+      expect(ranked.first.candidate.barcode, 'low-sugar');
+    });
+
+    test('Nutella minder kcal rankt lagere kcal vergelijkbare spread hoger',
+        () {
+      final source = spread('nutella', sugar: 50, kcal: 540);
+      final lowKcal = spread('low-kcal', sugar: 45, kcal: 300);
+      final highKcal = spread('high-kcal', sugar: 20, kcal: 610);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [highKcal, lowKcal],
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(ranked.first.candidate.barcode, 'low-kcal');
+    });
+
+    test('Magnum minder kcal rankt lager-kcal dessert hoger', () {
+      final source = iceCream('magnum', kcal: 310, sugar: 28);
+      final lowKcal = iceCream('low-kcal-ice', kcal: 120, sugar: 15);
+      final highKcal = iceCream('premium-ice', kcal: 330, sugar: 20);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [highKcal, lowKcal],
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(ranked.first.candidate.barcode, 'low-kcal-ice');
+    });
+
+    test('meer eiwit rankt eiwitrijkere vergelijkbare kandidaat hoger', () {
+      final source = yoghurt('source', protein: 7, kcal: 120, sugar: 8);
+      final highProtein = yoghurt('protein', protein: 18, kcal: 140, sugar: 6);
+      final normal = yoghurt('normal', protein: 9, kcal: 110, sugar: 5);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [normal, highProtein],
+        goal: SwapGoal.meerEiwit,
+      );
+
+      expect(ranked.first.candidate.barcode, 'protein');
+    });
+
+    test('beste overall kiest gebalanceerd, niet alleen laagste kcal', () {
+      final source = spread(
+        'source',
+        kcal: 540,
+        sugar: 50,
+        protein: 6,
+        fiber: 2,
+        salt: .3,
+        saturatedFat: 12,
+        nova: 4,
+      );
+      final onlyLowKcal = spread(
+        'only-kcal',
         kcal: 250,
-        servingQuantity: 900,
-        kcalServing: 2250);
-    final candidate = product('b',
-        family: 'bread_bakery',
-        kcal: 200,
-        servingQuantity: 35,
-        kcalServing: 70);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.minderKcal);
-    expect(result.isExcluded, isFalse);
-    expect(result.usesServingData, isFalse);
+        sugar: 60,
+        protein: 2,
+        fiber: 0,
+        salt: 1.2,
+        saturatedFat: 20,
+        nova: 4,
+      );
+      final balanced = spread(
+        'balanced',
+        kcal: 420,
+        sugar: 20,
+        protein: 8,
+        fiber: 8,
+        salt: .2,
+        saturatedFat: 6,
+        nova: 2,
+      );
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [onlyLowKcal, balanced],
+        goal: SwapGoal.besteOverall,
+      );
+
+      expect(ranked.first.candidate.barcode, 'balanced');
+    });
   });
 
-  test('602 gram pindakaaspot valt terug op per 100 gram', () {
-    // Gekalibreerd op de echte serving_quantity-verdeling: nut_butters heeft
-    // een mediaanportie van 15g, maar sommige producten hebben de hele
-    // pot (602g) als serving_quantity staan.
-    final source = product('a',
-        family: 'nut_butters',
-        kcal: 600,
-        servingQuantity: 602,
-        kcalServing: 3612);
-    final candidate = product('b',
-        family: 'nut_butters', kcal: 550, servingQuantity: 15, kcalServing: 82.5);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.minderKcal);
-    expect(result.isExcluded, isFalse);
-    expect(result.usesServingData, isFalse);
-  });
-
-  test('ontbrekende niet-doeldata is neutraal en veroorzaakt geen penalty', () {
-    final source = product('a', sugar: 20);
-    final candidate = product('b', sugar: 10);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.minderSuiker);
-    expect(result.isExcluded, isFalse);
-    expect(result.score, greaterThan(0));
-  });
-
-  test('harde penalty sluit kandidaat uit zonder puntenaftrek', () {
-    final source = product('a', protein: 10, kcal: 100);
-    final candidate = product('b', protein: 13, kcal: 120);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.meerEiwit);
-    expect(result.isExcluded, isTrue);
-    expect(result.excludedReason, 'hard_penalty');
-  });
-
-  test('overall gebruikt de hartig-gewichten', () {
-    final source = product('a',
-        cluster: 'hartig', kcal: 500, sugar: 50, protein: 5, fiber: 2);
-    final candidate = product('b',
-        cluster: 'hartig', kcal: 450, sugar: 40, protein: 6, fiber: 3);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.besteOverall);
-    expect(result.isExcluded, isFalse);
-    expect(result.score, lessThan(100));
-  });
-
-  // Regressietest: swap_family_mapping.category_cluster levert altijd een
-  // van deze Nederlandse waarden (nooit de Engelse namen uit een eerder
-  // taxonomievoorbeeld). Als _overallScore ooit weer op Engelse namen zou
-  // schakelen, valt elk van deze clusters terug op _excluded(...), en faalt
-  // deze test meteen in plaats van pas op te vallen met echte productdata.
-  test('overall ondersteunt elk echt category_cluster uit de database', () {
-    for (final cluster in [
-      'drank',
-      'zoet',
-      'hartig',
-      'zuivel',
-      'fruit_groente',
-      'maaltijd',
-      'overig',
-    ]) {
-      final source = product('a',
-          cluster: cluster, kcal: 500, sugar: 50, protein: 5, fiber: 2);
-      final candidate = product('b',
-          cluster: cluster, kcal: 450, sugar: 40, protein: 6, fiber: 3);
+  group('rare swaps', () {
+    test('Nutella naar water mag niet', () {
       final result = calculator.score(
-          source: source, candidate: candidate, goal: SwapGoal.besteOverall);
-      expect(result.excludedReason, isNot('unsupported_category_cluster'),
-          reason: 'cluster "$cluster" zou een geldig gewichtsprofiel moeten hebben');
-    }
+        source: spread('nutella'),
+        candidate: drink('water'),
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.isExcluded, isTrue);
+      expect(result.excludedReason, 'insufficient_similarity');
+    });
+
+    test('Magnum naar rauwe vis mag niet', () {
+      final result = calculator.score(
+        source: iceCream('magnum'),
+        candidate: rawFish('raw-fish'),
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.isExcluded, isTrue);
+      expect(result.excludedReason, 'candidate_not_eligible');
+    });
+
+    test('zalm wrap naar fish_seafood/raw fish mag niet als snackadvies', () {
+      final result = calculator.score(
+        source: wrap('zalm-wrap'),
+        candidate: rawFish('tonijnblik'),
+        goal: SwapGoal.besteOverall,
+      );
+
+      expect(result.isExcluded, isTrue);
+      expect(result.excludedReason, 'candidate_not_eligible');
+    });
   });
 
-  test('overall sluit onbekend/ontbrekend category_cluster uit', () {
-    final source = product('a', cluster: null, kcal: 500);
-    final candidate = product('b', cluster: null, kcal: 450);
-    final result = calculator.score(
-        source: source, candidate: candidate, goal: SwapGoal.besteOverall);
-    expect(result.isExcluded, isTrue);
-    expect(result.excludedReason, 'unsupported_category_cluster');
+  group('modelweging', () {
+    test('hoofdformule gebruikt exact 30/25/15/15/10/5', () {
+      expect(SwapScoreCalculator.expectedWeights.goalMatch, 30);
+      expect(SwapScoreCalculator.expectedWeights.nutritionImprovement, 25);
+      expect(SwapScoreCalculator.expectedWeights.dayContext, 15);
+      expect(SwapScoreCalculator.expectedWeights.similarity, 15);
+      expect(SwapScoreCalculator.expectedWeights.processingQuality, 10);
+      expect(SwapScoreCalculator.expectedWeights.dataQuality, 5);
+
+      final result = calculator.score(
+        source: spread('source', sugar: 50, kcal: 500),
+        candidate: spread('candidate', sugar: 20, kcal: 400),
+        goal: SwapGoal.minderSuiker,
+      );
+
+      final recomputed = result.goalMatch * .30 +
+          result.nutritionImprovement * .25 +
+          result.dayContext * .15 +
+          result.similarity * .15 +
+          result.processingQuality * .10 +
+          result.dataQuality * .05;
+      expect(result.score, closeTo(recomputed, .0001));
+    });
+
+    test('interne minder-suiker subweging is 75/15/10', () {
+      final source = spread(
+        'source',
+        sugar: 40,
+        kcal: 500,
+        protein: 5,
+        fiber: 2,
+      );
+      final candidate = spread(
+        'candidate',
+        sugar: 20,
+        kcal: 450,
+        protein: 6,
+        fiber: 3,
+      );
+
+      final result = calculator.score(
+        source: source,
+        candidate: candidate,
+        goal: SwapGoal.minderSuiker,
+      );
+
+      // sugar reduction: 50, kcal reduction: 10,
+      // protein gain: 20, fiber gain: 50 -> avg 35.
+      final expectedGoalMatch = 50 * .75 + 10 * .15 + 35 * .10;
+      expect(result.goalMatch, closeTo(expectedGoalMatch, .0001));
+    });
+
+    test('score blijft altijd tussen 0 en 100', () {
+      final result = calculator.score(
+        source: spread('source', kcal: 1000, sugar: 100, protein: 0),
+        candidate: spread('candidate', kcal: 0, sugar: 0, protein: 100),
+        goal: SwapGoal.besteOverall,
+      );
+
+      expect(result.score, inInclusiveRange(0, 100));
+      expect(result.goalMatch, inInclusiveRange(0, 100));
+      expect(result.nutritionImprovement, inInclusiveRange(0, 100));
+      expect(result.dayContext, inInclusiveRange(0, 100));
+      expect(result.similarity, inInclusiveRange(0, 100));
+      expect(result.processingQuality, inInclusiveRange(0, 100));
+      expect(result.dataQuality, inInclusiveRange(0, 100));
+    });
+
+    test('ontbrekende dagcontext scoort neutraal 50/100', () {
+      final result = calculator.score(
+        source: spread('source', sugar: 50),
+        candidate: spread('candidate', sugar: 20),
+        goal: SwapGoal.minderSuiker,
+      );
+
+      expect(result.dayContext, 50);
+    });
+  });
+
+  test('resolved view modelvelden worden gemapt naar ProductFeatures', () {
+    final candidate = SwapCandidate.fromJoinedJson({
+      'barcode': '123',
+      'name': 'Resolved product',
+      'classification_status': 'classified',
+      'is_swap_relevant': true,
+      'swap_family': 'chocolate_spreads',
+      'is_sweet': true,
+      'is_salty': false,
+      'is_drink': false,
+      'is_dairy': false,
+      'is_chocolate': true,
+      'is_crunchy': false,
+      'is_less_processed': true,
+    });
+
+    expect(candidate.name, 'Resolved product');
+    expect(candidate.features.classificationStatus, 'classified');
+    expect(candidate.features.isSweet, isTrue);
+    expect(candidate.features.isDrink, isFalse);
+    expect(candidate.features.isChocolate, isTrue);
+    expect(candidate.features.isLessProcessed, isTrue);
   });
 }
 
+SwapCandidate spread(
+  String barcode, {
+  String? status = 'classified',
+  bool isSwapRelevant = true,
+  double? kcal = 540,
+  double? sugar = 50,
+  double? protein = 6,
+  double? fiber = 2,
+  double? fat = 30,
+  double? carbs = 55,
+  double? salt = .2,
+  double? saturatedFat = 10,
+  int? nova = 4,
+}) =>
+    product(
+      barcode,
+      family: 'chocolate_spreads',
+      cluster: 'zoet',
+      snackType: 'sweet_spread',
+      form: 'spread',
+      mode: 'spread_on_bread',
+      taste: const ['chocolate', 'sweet'],
+      texture: const ['creamy'],
+      moment: const ['breakfast', 'snack'],
+      isSweet: true,
+      isChocolate: true,
+      status: status,
+      isSwapRelevant: isSwapRelevant,
+      kcal: kcal,
+      sugar: sugar,
+      protein: protein,
+      fiber: fiber,
+      fat: fat,
+      carbs: carbs,
+      salt: salt,
+      saturatedFat: saturatedFat,
+      nova: nova,
+    );
+
+SwapCandidate iceCream(
+  String barcode, {
+  double? kcal = 280,
+  double? sugar = 25,
+}) =>
+    product(
+      barcode,
+      family: 'ice_cream_desserts',
+      cluster: 'zuivel',
+      snackType: 'ice_cream',
+      form: 'ice_cream',
+      mode: 'dessert',
+      taste: const ['sweet', 'vanilla'],
+      texture: const ['creamy'],
+      moment: const ['dessert', 'snack'],
+      isSweet: true,
+      isDairy: true,
+      kcal: kcal,
+      sugar: sugar,
+      protein: 4,
+      fiber: 1,
+      fat: 15,
+      carbs: 30,
+    );
+
+SwapCandidate yoghurt(
+  String barcode, {
+  double? protein,
+  double? kcal,
+  double? sugar,
+}) =>
+    product(
+      barcode,
+      family: 'yoghurt_skyr_quark',
+      cluster: 'zuivel',
+      snackType: 'yoghurt',
+      form: 'cup',
+      mode: 'spoonable',
+      taste: const ['dairy'],
+      texture: const ['creamy'],
+      moment: const ['breakfast', 'snack'],
+      isDairy: true,
+      protein: protein,
+      kcal: kcal,
+      sugar: sugar,
+      fiber: 0,
+      fat: 3,
+      carbs: 8,
+    );
+
+SwapCandidate drink(String barcode) => product(
+      barcode,
+      family: 'water',
+      cluster: 'drank',
+      snackType: 'water',
+      form: 'drink',
+      mode: 'drink',
+      taste: const ['neutral'],
+      texture: const ['liquid'],
+      moment: const ['drink'],
+      isDrink: true,
+      kcal: 0,
+      sugar: 0,
+      protein: 0,
+      fiber: 0,
+      fat: 0,
+      carbs: 0,
+    );
+
+SwapCandidate rawFish(String barcode) => product(
+      barcode,
+      family: 'fish_seafood',
+      cluster: 'maaltijd',
+      snackType: 'raw_fish',
+      form: 'raw_piece',
+      mode: 'cook_first',
+      isSwapRelevant: false,
+      kcal: 140,
+      sugar: 0,
+      protein: 22,
+      fiber: 0,
+      fat: 5,
+      carbs: 0,
+    );
+
+SwapCandidate wrap(String barcode) => product(
+      barcode,
+      family: 'sandwiches_wraps',
+      cluster: 'maaltijd',
+      snackType: 'wrap',
+      form: 'wrap',
+      mode: 'ready_to_eat',
+      taste: const ['savory'],
+      texture: const ['soft'],
+      moment: const ['lunch'],
+      kcal: 240,
+      sugar: 3,
+      protein: 12,
+      fiber: 4,
+      fat: 8,
+      carbs: 30,
+    );
+
 SwapCandidate product(
   String barcode, {
-  String family = 'test_family',
-  String? cluster,
+  required String family,
+  required String cluster,
+  required String snackType,
+  required String form,
+  required String mode,
+  String? status = 'classified',
+  bool isSwapRelevant = true,
+  List<String> taste = const [],
+  List<String> texture = const [],
+  List<String> moment = const [],
+  bool? isSweet,
+  bool? isSalty,
+  bool? isDrink,
+  bool? isDairy,
+  bool? isChocolate,
+  bool? isCrunchy,
   double? kcal,
-  double? protein,
   double? sugar,
+  double? protein,
   double? fiber,
+  double? fat,
+  double? carbs,
   double? salt,
   double? saturatedFat,
-  double? servingQuantity,
-  double? kcalServing,
-  double? proteinServing,
-  double? sugarServing,
+  int? nova,
+  String? nutriscoreGrade = 'c',
+  double? dataQuality = 90,
+  double? aiConfidence = .9,
+  double? completeness = 90,
 }) =>
     SwapCandidate(
       barcode: barcode,
       name: barcode,
       kcal100: kcal,
-      protein100: protein,
       sugar100: sugar,
+      protein100: protein,
       fiber100: fiber,
+      fat100: fat,
+      carbs100: carbs,
       salt100: salt,
       saturatedFat100: saturatedFat,
-      servingQuantity: servingQuantity,
-      kcalServing: kcalServing,
-      proteinServing: proteinServing,
-      sugarServing: sugarServing,
+      novaGroup: nova,
+      nutriscoreGrade: nutriscoreGrade,
+      completeness: completeness,
       features: ProductFeatures(
-          barcode: barcode,
-          swapFamily: family,
-          categoryCluster: cluster,
-          isSwapRelevant: true),
+        barcode: barcode,
+        classificationStatus: status,
+        swapFamily: family,
+        categoryCluster: cluster,
+        snackType: snackType,
+        productForm: form,
+        consumptionMode: mode,
+        usageContext: moment,
+        tasteProfile: taste,
+        textureProfile: texture,
+        useMoment: moment,
+        isSweet: isSweet,
+        isSalty: isSalty,
+        isDrink: isDrink,
+        isDairy: isDairy,
+        isChocolate: isChocolate,
+        isCrunchy: isCrunchy,
+        isSwapRelevant: isSwapRelevant,
+        dataQualityScore: dataQuality,
+        aiConfidence: aiConfidence,
+      ),
     );

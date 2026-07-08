@@ -5,7 +5,6 @@ import 'package:bitewise/core/supabase/supabase_service.dart';
 import 'package:bitewise/features/snackswap/domain/goal.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/snack_product.dart';
-import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
 import 'package:bitewise/features/snackswap/domain/swap_suggestion.dart';
 
 // --- Resultaattypes met duidelijke, aparte statussen ---
@@ -57,6 +56,18 @@ class SnackSwapService {
   SnackSwapService(this._supabase);
 
   final SupabaseService _supabase;
+  static const _resolvedProductView = 'product_features_resolved';
+  static const _resolvedProductColumns = '''
+barcode,name,brand,image_url,category,
+kcal_100g,sugar_100g,protein_100g,fat_100g,carbs_100g,fiber_100g,salt_100g,saturated_fat_100g,
+nova_group,nutriscore_grade,nutriscore_score,additives_n,
+completeness,states_tags,serving_quantity,serving_size,kcal_serving,proteins_serving,sugars_serving,
+fiber_serving,salt_serving,saturated_fat_serving,allergens,
+swap_family,classification_status,is_swap_relevant,category_cluster,snack_type,product_form,consumption_mode,
+secondary_consumption_modes,usage_context,taste_profile,texture_profile,use_moment,swap_tags,recommended_swap_directions,
+processing_quality_score,data_quality_score,ai_confidence,is_sweet,is_salty,is_drink,is_dairy,is_chocolate,is_crunchy,
+is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
+''';
 
   /// Basale barcode-validatie (EAN/UPC): alleen cijfers, 8–14 tekens.
   static bool isValidBarcode(String input) {
@@ -167,15 +178,15 @@ class SnackSwapService {
   // --- Rule-based SwapScore-engine (nieuw, parallel pad naast recommend_swaps) ---
   //
   // Puur lezen; geen AI-aanroep. Zie SwapScoreCalculator voor de berekening
-  // en supabase/migrations/0009_swapscore_model.sql voor de referentiespec.
+  // en product_features_resolved voor de schone Supabase-inputlaag.
 
   /// Bron- of kandidaatproduct incl. afgeleide features, in één query.
   Future<SwapCandidate?> getCandidateByBarcode(String barcode) async {
     if (!_supabase.isAvailable) return null;
     try {
       final rows = await _supabase.client
-          .from('product_features')
-          .select('*, products(*)')
+          .from(_resolvedProductView)
+          .select(_resolvedProductColumns)
           .eq('barcode', barcode.trim())
           .limit(1);
       final list = rows as List;
@@ -214,57 +225,69 @@ class SnackSwapService {
     try {
       if (swapFamily != null && swapFamily.isNotEmpty) {
         final rows = await _supabase.client
-            .from('product_features')
-            .select('*, products(*)')
+            .from(_resolvedProductView)
+            .select(_resolvedProductColumns)
             .eq('swap_family', swapFamily)
+            .eq('classification_status', 'classified')
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
             .limit(limit);
         final candidates = (rows as List)
-            .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+            .map((r) => SwapCandidate.fromJoinedJson(
+                (r as Map).cast<String, dynamic>()))
+            .where(_isEligibleCandidate)
             .toList();
         if (candidates.length >= _minAcceptableCandidates) return candidates;
       }
       if (snackType != null && snackType.isNotEmpty) {
         final rows = await _supabase.client
-            .from('product_features')
-            .select('*, products(*)')
+            .from(_resolvedProductView)
+            .select(_resolvedProductColumns)
             .eq('snack_type', snackType)
+            .eq('classification_status', 'classified')
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
             .limit(limit);
         final candidates = (rows as List)
-            .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+            .map((r) => SwapCandidate.fromJoinedJson(
+                (r as Map).cast<String, dynamic>()))
+            .where(_isEligibleCandidate)
             .toList();
         if (candidates.length >= _minAcceptableCandidates) return candidates;
       }
       if (categoryCluster != null && categoryCluster.isNotEmpty) {
         final rows = await _supabase.client
-            .from('product_features')
-            .select('*, products(*)')
+            .from(_resolvedProductView)
+            .select(_resolvedProductColumns)
             .eq('category_cluster', categoryCluster)
+            .eq('classification_status', 'classified')
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
             .limit(limit);
         final candidates = (rows as List)
-            .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+            .map((r) => SwapCandidate.fromJoinedJson(
+                (r as Map).cast<String, dynamic>()))
+            .where(_isEligibleCandidate)
             .toList();
         if (candidates.isNotEmpty) return candidates;
       }
       if (fallbackCategory != null && fallbackCategory.isNotEmpty) {
         final rows = await _supabase.client
-            .from('product_features')
-            .select('*, products!inner(*)')
+            .from(_resolvedProductView)
+            .select(_resolvedProductColumns)
+            .eq('classification_status', 'classified')
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
-            .ilike('products.category', '%$fallbackCategory%')
+            .ilike('category', '%$fallbackCategory%')
             .order('data_quality_score', ascending: false)
             .limit(limit);
         return (rows as List)
-            .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+            .map((r) => SwapCandidate.fromJoinedJson(
+                (r as Map).cast<String, dynamic>()))
+            .where(_isEligibleCandidate)
             .toList();
       }
       return const [];
@@ -308,65 +331,40 @@ class SnackSwapService {
     try {
       if (relatedFamilies.isNotEmpty) {
         final rows = await _supabase.client
-            .from('product_features')
-            .select('*, products(*)')
+            .from(_resolvedProductView)
+            .select(_resolvedProductColumns)
             .inFilter('swap_family', relatedFamilies)
+            .eq('classification_status', 'classified')
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
             .limit(limit);
         final candidates = (rows as List)
-            .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+            .map((r) => SwapCandidate.fromJoinedJson(
+                (r as Map).cast<String, dynamic>()))
+            .where(_isEligibleCandidate)
             .toList();
         if (candidates.isNotEmpty) return candidates;
       }
       if (productForm.isEmpty) return const [];
       var query = _supabase.client
-          .from('product_features')
-          .select('*, products(*)')
+          .from(_resolvedProductView)
+          .select(_resolvedProductColumns)
           .eq('product_form', productForm)
+          .eq('classification_status', 'classified')
           .eq('is_swap_relevant', true)
           .neq('barcode', excludeBarcode);
       if (excludeSwapFamily != null && excludeSwapFamily.isNotEmpty) {
         query = query.neq('swap_family', excludeSwapFamily);
       }
-      final rows = await query.order('data_quality_score', ascending: false).limit(limit);
+      final rows = await query
+          .order('data_quality_score', ascending: false)
+          .limit(limit);
       return (rows as List)
-          .map((r) => SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+          .map((r) =>
+              SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+          .where(_isEligibleCandidate)
           .toList();
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  /// De actieve scoregewichten (`swap_score_weights`), met veilige fallback.
-  Future<SwapScoreWeights> getActiveWeights() async {
-    if (!_supabase.isAvailable) return SwapScoreWeights.fallback;
-    try {
-      final rows = await _supabase.client
-          .from('swap_score_weights')
-          .select()
-          .eq('is_active', true)
-          .order('created_at', ascending: false)
-          .limit(1);
-      final list = rows as List;
-      if (list.isEmpty) return SwapScoreWeights.fallback;
-      return SwapScoreWeights.fromJson((list.first as Map).cast<String, dynamic>());
-    } catch (_) {
-      return SwapScoreWeights.fallback;
-    }
-  }
-
-  /// De UX-groep-definities (`swap_recommendation_groups`), niet hardcoded.
-  Future<List<Map<String, dynamic>>> getRecommendationGroups() async {
-    if (!_supabase.isAvailable) return const [];
-    try {
-      final rows = await _supabase.client
-          .from('swap_recommendation_groups')
-          .select()
-          .eq('is_active', true)
-          .order('sort_order');
-      return (rows as List).map((r) => (r as Map).cast<String, dynamic>()).toList();
     } catch (_) {
       return const [];
     }
@@ -382,6 +380,12 @@ class SnackSwapService {
     }
     return 'Er ging iets mis bij de server. Probeer het later opnieuw.';
   }
+
+  static bool _isEligibleCandidate(SwapCandidate candidate) =>
+      candidate.features.classificationStatus == 'classified' &&
+      candidate.features.isSwapRelevant &&
+      candidate.features.swapFamily != null &&
+      candidate.features.swapFamily!.isNotEmpty;
 }
 
 final snackSwapServiceProvider = Provider<SnackSwapService>(

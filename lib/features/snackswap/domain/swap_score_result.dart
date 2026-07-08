@@ -1,7 +1,6 @@
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 
-/// De 6 gewichten uit `swap_score_weights` (som hoeft geen 100 te zijn —
-/// [SwapScoreCalculator] normaliseert zelf).
+/// De vaste 6 hoofdgewichten van het SwapScore-model.
 class SwapScoreWeights {
   const SwapScoreWeights({
     required this.goalMatch,
@@ -19,8 +18,7 @@ class SwapScoreWeights {
   final double processingQuality;
   final double dataQuality;
 
-  /// Redelijke standaardwaarden (identiek aan de seed in migratie 0009),
-  /// alleen gebruikt als de config-tabel om wat voor reden niet bereikbaar is.
+  /// Exacte hoofdweging: 30/25/15/15/10/5.
   static const fallback = SwapScoreWeights(
     goalMatch: 30,
     nutritionImprovement: 25,
@@ -53,9 +51,35 @@ class SwapScoreWeights {
 /// Dagcontext voor het scoren (resterende ruimte vandaag). Elk veld is
 /// optioneel: ontbrekend = neutraal meewegen, nooit hard afstraffen.
 class SwapDayContext {
-  const SwapDayContext({this.kcalRemaining, this.sugarRemainingG});
-  final double? kcalRemaining;
-  final double? sugarRemainingG;
+  const SwapDayContext({
+    this.dailyKcalUsed,
+    this.dailyKcalGoal,
+    this.dailySugarUsed,
+    this.dailySugarGoal,
+    this.dailyProteinUsed,
+    this.dailyProteinGoal,
+    this.dailyFiberUsed,
+    this.dailyFiberGoal,
+  });
+
+  final double? dailyKcalUsed;
+  final double? dailyKcalGoal;
+  final double? dailySugarUsed;
+  final double? dailySugarGoal;
+  final double? dailyProteinUsed;
+  final double? dailyProteinGoal;
+  final double? dailyFiberUsed;
+  final double? dailyFiberGoal;
+
+  bool get isEmpty =>
+      dailyKcalUsed == null &&
+      dailyKcalGoal == null &&
+      dailySugarUsed == null &&
+      dailySugarGoal == null &&
+      dailyProteinUsed == null &&
+      dailyProteinGoal == null &&
+      dailyFiberUsed == null &&
+      dailyFiberGoal == null;
 }
 
 /// Eén berekende swap-uitkomst: score + transparante onderbouwing.

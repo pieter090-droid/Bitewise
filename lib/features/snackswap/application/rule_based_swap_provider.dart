@@ -5,8 +5,8 @@ import 'package:bitewise/features/snackswap/data/snackswap_service.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
 
-/// Nieuwe, rule-based aanbevelingsengine op basis van `product_features` +
-/// `swap_score_weights`/`swap_recommendation_groups`. Draait volledig lokaal
+/// Rule-based aanbevelingsengine op basis van `product_features_resolved`.
+/// Draait volledig lokaal
 /// (geen AI-aanroep); parallel aan het bestaande `recommend_swaps`-pad, dat
 /// ongemoeid blijft.
 sealed class RuleBasedSwapOutcome {
@@ -51,8 +51,8 @@ class SwapRecommendationGroup {
 }
 
 /// Vertaalt het onboarding-doel naar het SwapGoal dat de calculator kent.
-/// Leest een boolean-feature op naam (voor groep-regels uit
-/// `swap_recommendation_groups.rule_column`). Onbekende kolomnaam -> null.
+/// Leest een boolean-feature op naam voor lokale UI-groepering.
+/// Onbekende kolomnaam -> null.
 bool? _boolForColumn(ProductFeatures f, String? column) => switch (column) {
       'is_low_sugar' => f.isLowSugar,
       'is_high_protein' => f.isHighProtein,
@@ -109,8 +109,8 @@ bool _hasAnyNutritionImprovement(
 }
 
 /// Groepeert een (eventueel al op categorie gefilterde) kandidatenlijst
-/// volgens de `swap_recommendation_groups`-config -- Minder kcal/Meer
-/// eiwit/Minder suiker/Overall, elk relatief t.o.v. [source] (zie
+/// volgens een lokale UI-config -- Minder kcal/Meer eiwit/Minder suiker/
+/// Overall, elk relatief t.o.v. [source] (zie
 /// [_relativeImprovement]). Herbruikbaar: de hoofdweergave gebruikt dit met
 /// de volledige kandidatenpool en limiet 5; het categoriefilter op het
 /// scherm roept dit opnieuw aan met alleen kandidaten van één `snack_type`
@@ -194,13 +194,10 @@ final ruleBasedSwapProvider = FutureProvider.family<RuleBasedSwapOutcome,
   );
   if (candidates.isEmpty) return const RuleBasedSwapNotFound();
 
-  final weights = await service.getActiveWeights();
-  final groupConfigs = await service.getRecommendationGroups();
-
   final goal = request.goal;
   const dayContext = SwapDayContext();
 
-  final calculator = SwapScoreCalculator(weights);
+  final calculator = SwapScoreCalculator();
   final ranked = calculator.rankCandidates(
     source: source,
     candidates: candidates,
@@ -209,7 +206,9 @@ final ruleBasedSwapProvider = FutureProvider.family<RuleBasedSwapOutcome,
   );
   if (ranked.isEmpty) return const RuleBasedSwapNotFound();
 
-  final configs = groupConfigs.isNotEmpty ? groupConfigs : fallbackGroupConfigs;
+  final configs = [
+    {'slug': goal.value, 'label': goal.label},
+  ];
   final groups = <SwapRecommendationGroup>[
     SwapRecommendationGroup(
       slug: 'directe_swaps',
