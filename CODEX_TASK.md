@@ -16,6 +16,21 @@ in de Bitewise-app (Flutter + Supabase, project-ref `ulgfgawoulkyumfzqgrc`).
   nodig denkt te hebben dat nog niet bestaat, meld dat in je samenvatting i.p.v.
   zelf een migratie te schrijven, zodat er geen dubbel werk of conflicterende
   wijzigingen ontstaan.
+- **Codex bouwt géén AI-classificatie en roept zelf geen AI-model aan.**
+  `swap_family` (en alles wat daaruit wordt afgeleid) komt uitsluitend uit het
+  bestaande model: eerst de regelgebaseerde functie `compute_swap_family()`,
+  en waar regels ontoereikend zijn later een kleine, losse AI-batch die Claude
+  op de backend draait (Anthropic Batch API, buiten deze taak om). Codex
+  **consumeert** deze velden puur zoals ze al in de database staan (via
+  `product_features`/`swap_family_mapping`) — nooit zelf gokken, overschrijven,
+  of een eigen classificatielaag bouwen. Kom je een product tegen zonder
+  `swap_family` (~26% van de swap-relevante producten heeft die nog niet),
+  behandel dat dan NULL-veilig (nooit als fout/mismatch, zie hieronder) en
+  meld het eventueel in je samenvatting — classificeer het zelf niet.
+- **Kortom: houd je strikt aan het huidige model zoals het in de database
+  staat.** Geen eigen varianten, geen bypass van `swap_family_mapping`, geen
+  losse/afwijkende velden verzinnen. Als iets niet klopt of ontbreekt: melden,
+  niet zelf "oplossen" buiten de vastgelegde architectuur om.
 
 ## Huidige staat (niet wijzigen tenzij nodig)
 
