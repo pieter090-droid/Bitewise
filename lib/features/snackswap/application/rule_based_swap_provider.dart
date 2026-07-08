@@ -1,12 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bitewise/features/onboarding/data/user_goals_repository.dart';
-import 'package:bitewise/features/onboarding/domain/goal_type.dart';
 import 'package:bitewise/features/snackswap/application/swap_score_calculator.dart';
 import 'package:bitewise/features/snackswap/data/snackswap_service.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
-import 'package:bitewise/features/tracker/application/tracker_providers.dart';
 
 /// Nieuwe, rule-based aanbevelingsengine op basis van `product_features` +
 /// `swap_score_weights`/`swap_recommendation_groups`. Draait volledig lokaal
@@ -28,7 +25,8 @@ class RuleBasedSwapError extends RuleBasedSwapOutcome {
 }
 
 class RuleBasedSwapFound extends RuleBasedSwapOutcome {
-  const RuleBasedSwapFound(this.groups, this.allRanked, this.source, this.configs);
+  const RuleBasedSwapFound(
+      this.groups, this.allRanked, this.source, this.configs);
   final List<SwapRecommendationGroup> groups;
 
   /// Volledige, ongecapte, op score gesorteerde kandidatenlijst (incl. de
@@ -53,13 +51,6 @@ class SwapRecommendationGroup {
 }
 
 /// Vertaalt het onboarding-doel naar het SwapGoal dat de calculator kent.
-SwapGoal swapGoalForGoalType(GoalType type) => switch (type) {
-      GoalType.loseWeight => SwapGoal.afvallen,
-      GoalType.maintain => SwapGoal.gewichtBehouden,
-      GoalType.buildMuscle => SwapGoal.spieropbouw,
-      GoalType.lessSugar => SwapGoal.minderSuiker,
-    };
-
 /// Leest een boolean-feature op naam (voor groep-regels uit
 /// `swap_recommendation_groups.rule_column`). Onbekende kolomnaam -> null.
 bool? _boolForColumn(ProductFeatures f, String? column) => switch (column) {
@@ -80,7 +71,8 @@ bool? _boolForColumn(ProductFeatures f, String? column) => switch (column) {
 /// het bronproduct -- die vergelijking ontbrak volledig. Onbekend (een van
 /// beide null) = kan niet bevestigen = hoort niet in deze groep, ook al is
 /// de absolute vlag toevallig waar.
-bool _relativeImprovement(String? column, SwapCandidate source, SwapCandidate candidate) {
+bool _relativeImprovement(
+    String? column, SwapCandidate source, SwapCandidate candidate) {
   switch (column) {
     case 'is_low_sugar':
       final s = source.sugar100, c = candidate.sugar100;
@@ -92,7 +84,8 @@ bool _relativeImprovement(String? column, SwapCandidate source, SwapCandidate ca
       final s = source.kcal100, c = candidate.kcal100;
       return s != null && c != null && c < s;
     case 'is_less_processed':
-      final s = source.features.processingQualityScore, c = candidate.features.processingQualityScore;
+      final s = source.features.processingQualityScore,
+          c = candidate.features.processingQualityScore;
       return s != null && c != null && c > s;
     default:
       return true;
@@ -104,7 +97,8 @@ bool _relativeImprovement(String? column, SwapCandidate source, SwapCandidate ca
 /// rechtvaardiging om een andere `swap_family` (bv. smeerkaas i.p.v.
 /// chocopasta) toch te tonen -- puur "andere vorm" zonder verbetering is
 /// geen zinnige suggestie.
-bool _hasAnyNutritionImprovement(SwapCandidate source, SwapCandidate candidate) {
+bool _hasAnyNutritionImprovement(
+    SwapCandidate source, SwapCandidate candidate) {
   final sSugar = source.sugar100, cSugar = candidate.sugar100;
   if (sSugar != null && cSugar != null && cSugar < sSugar) return true;
   final sKcal = source.kcal100, cKcal = candidate.kcal100;
@@ -144,9 +138,12 @@ List<SwapRecommendationGroup> buildRecommendationGroups({
             _relativeImprovement(column, source, r.candidate)) {
           return true;
         }
-        if (tag != null && r.candidate.features.swapTags.contains(tag)) return true;
+        if (tag != null && r.candidate.features.swapTags.contains(tag)) {
+          return true;
+        }
         if (direction != null &&
-            r.candidate.features.recommendedSwapDirections.contains(direction)) {
+            r.candidate.features.recommendedSwapDirections
+                .contains(direction)) {
           return true;
         }
         return false;
@@ -164,15 +161,24 @@ List<SwapRecommendationGroup> buildRecommendationGroups({
 
 const List<Map<String, dynamic>> fallbackGroupConfigs = [
   {'slug': 'minder_kcal', 'label': 'Minder kcal', 'rule_column': 'is_low_kcal'},
-  {'slug': 'meer_eiwit', 'label': 'Meer eiwit', 'rule_column': 'is_high_protein'},
-  {'slug': 'minder_suiker', 'label': 'Minder suiker', 'rule_column': 'is_low_sugar'},
+  {
+    'slug': 'meer_eiwit',
+    'label': 'Meer eiwit',
+    'rule_column': 'is_high_protein'
+  },
+  {
+    'slug': 'minder_suiker',
+    'label': 'Minder suiker',
+    'rule_column': 'is_low_sugar'
+  },
   {'slug': 'beste_keuze_vandaag', 'label': 'Overall betere suggestie'},
 ];
 
 /// Berekent en groepeert swap-aanbevelingen voor een gescand product.
-final ruleBasedSwapProvider =
-    FutureProvider.family<RuleBasedSwapOutcome, String>((ref, barcode) async {
+final ruleBasedSwapProvider = FutureProvider.family<RuleBasedSwapOutcome,
+    ({String barcode, SwapGoal goal})>((ref, request) async {
   final service = ref.watch(snackSwapServiceProvider);
+  final barcode = request.barcode;
 
   final source = await service.getCandidateByBarcode(barcode);
   if (source == null || !source.features.isSwapRelevant) {
@@ -191,15 +197,8 @@ final ruleBasedSwapProvider =
   final weights = await service.getActiveWeights();
   final groupConfigs = await service.getRecommendationGroups();
 
-  final userGoal = ref.read(activeGoalProvider).valueOrNull;
-  final goal =
-      userGoal != null ? swapGoalForGoalType(userGoal.goalType) : SwapGoal.gezonderEten;
-
-  final summary = ref.read(dailySummaryProvider);
-  final dayContext = SwapDayContext(
-    kcalRemaining: summary.remainingKcal,
-    sugarRemainingG: (summary.sugarLimit - summary.sugar).toDouble(),
-  );
+  final goal = request.goal;
+  const dayContext = SwapDayContext();
 
   final calculator = SwapScoreCalculator(weights);
   final ranked = calculator.rankCandidates(
@@ -211,12 +210,13 @@ final ruleBasedSwapProvider =
   if (ranked.isEmpty) return const RuleBasedSwapNotFound();
 
   final configs = groupConfigs.isNotEmpty ? groupConfigs : fallbackGroupConfigs;
-  final groups = buildRecommendationGroups(
-    configs: configs,
-    source: source,
-    ranked: ranked,
-    perGroupLimit: 5,
-  );
+  final groups = <SwapRecommendationGroup>[
+    SwapRecommendationGroup(
+      slug: 'directe_swaps',
+      label: 'Directe swaps',
+      results: ranked.take(8).toList(),
+    ),
+  ];
 
   // "Andere opties": bewust cross-familie (bv. chocopasta -> smeerkaas of
   // pindakaas), primair via de expliciete `related_families`-lijst uit
@@ -236,8 +236,16 @@ final ruleBasedSwapProvider =
       excludeSwapFamily: sourceFamily,
     );
     otherOptions = otherFormCandidates
+        .where((c) =>
+            c.features.productForm == null ||
+            c.features.productForm == sourceForm)
+        .where((c) =>
+            c.features.consumptionMode == null ||
+            source.features.consumptionMode == null ||
+            c.features.consumptionMode == source.features.consumptionMode)
         .where((c) => _hasAnyNutritionImprovement(source, c))
-        .map((c) => calculator.scoreCrossForm(source: source, candidate: c, goal: goal, dayContext: dayContext))
+        .map((c) => calculator.scoreCrossForm(
+            source: source, candidate: c, goal: goal, dayContext: dayContext))
         .toList()
       ..sort((a, b) => b.score.compareTo(a.score));
     if (otherOptions.isNotEmpty) {

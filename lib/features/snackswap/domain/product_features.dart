@@ -125,6 +125,15 @@ class SwapCandidate {
     this.carbs100,
     this.fiber100,
     this.salt100,
+    this.saturatedFat100,
+    this.servingQuantity,
+    this.servingSize,
+    this.kcalServing,
+    this.proteinServing,
+    this.sugarServing,
+    this.fiberServing,
+    this.saltServing,
+    this.saturatedFatServing,
     this.allergens,
     this.category,
     required this.features,
@@ -141,6 +150,15 @@ class SwapCandidate {
   final double? carbs100;
   final double? fiber100;
   final double? salt100;
+  final double? saturatedFat100;
+  final double? servingQuantity;
+  final String? servingSize;
+  final double? kcalServing;
+  final double? proteinServing;
+  final double? sugarServing;
+  final double? fiberServing;
+  final double? saltServing;
+  final double? saturatedFatServing;
   final String? allergens;
 
   /// Kale OFF-categorie (`products.category`) -- alleen gebruikt als
@@ -165,6 +183,15 @@ class SwapCandidate {
       carbs100: d(product?['carbs_100g']),
       fiber100: d(product?['fiber_100g']),
       salt100: d(product?['salt_100g']),
+      saturatedFat100: d(product?['saturated_fat_100g']),
+      servingQuantity: d(product?['serving_quantity']),
+      servingSize: product?['serving_size']?.toString(),
+      kcalServing: d(product?['kcal_serving']),
+      proteinServing: d(product?['proteins_serving']),
+      sugarServing: d(product?['sugars_serving']),
+      fiberServing: d(product?['fiber_serving']),
+      saltServing: d(product?['salt_serving']),
+      saturatedFatServing: d(product?['saturated_fat_serving']),
       allergens: product?['allergens'] as String?,
       category: product?['category'] as String?,
       features: ProductFeatures.fromJson(row),

@@ -52,6 +52,8 @@ class SwapScreen extends ConsumerStatefulWidget {
 }
 
 class _SwapScreenState extends ConsumerState<SwapScreen> {
+  SwapGoal? _selectedGoal;
+
   /// Leeg = nog geen categorie gekozen. Meerdere `snack_type`-waarden
   /// tegelijk aan te vinken (bv. Zuivel + Fruit samen doorzoeken).
   final Set<String> _snackTypeFilters = {};
@@ -79,7 +81,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final outcome = ref.watch(ruleBasedSwapProvider(widget.barcode));
+    final goal = _selectedGoal;
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -87,34 +89,50 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         title: const Text('Betere swaps'),
       ),
       body: SafeArea(
-        child: outcome.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => _Info(
-            icon: Icons.cloud_off,
-            title: 'Er ging iets mis',
-            body: 'De aanbevelingen konden niet geladen worden.',
-            action: TextButton.icon(
-              onPressed: () => ref.invalidate(ruleBasedSwapProvider(widget.barcode)),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Opnieuw proberen'),
-            ),
-          ),
-          data: (result) => switch (result) {
-            RuleBasedSwapNotFound() => const _Info(
-                icon: Icons.inbox_outlined,
-                title: 'Geen swaps gevonden',
-                body: 'Voor dit product hebben we nog geen alternatief -- '
-                    'mogelijk is het nog niet verrijkt of niet swap-relevant.',
-              ),
-            RuleBasedSwapError() => const _Info(
-                icon: Icons.cloud_off,
-                title: 'Er ging iets mis',
-                body: 'De aanbevelingen konden niet geladen worden.',
-              ),
-            RuleBasedSwapFound(:final groups, :final allRanked, :final source, :final configs) =>
-              _buildFound(groups, allRanked, source, configs),
-          },
-        ),
+        child: goal == null
+            ? _GoalChooser(
+                onSelected: (value) => setState(() => _selectedGoal = value))
+            : ref
+                .watch(ruleBasedSwapProvider(
+                    (barcode: widget.barcode, goal: goal)))
+                .when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => _Info(
+                    icon: Icons.cloud_off,
+                    title: 'Er ging iets mis',
+                    body: 'De aanbevelingen konden niet geladen worden.',
+                    action: TextButton.icon(
+                      onPressed: () => ref.invalidate(
+                        ruleBasedSwapProvider(
+                            (barcode: widget.barcode, goal: goal)),
+                      ),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Opnieuw proberen'),
+                    ),
+                  ),
+                  data: (result) => switch (result) {
+                    RuleBasedSwapNotFound() => const _Info(
+                        icon: Icons.inbox_outlined,
+                        title: 'Geen swaps gevonden',
+                        body:
+                            'Voor dit product hebben we nog geen alternatief -- '
+                            'mogelijk is het nog niet verrijkt of niet swap-relevant.',
+                      ),
+                    RuleBasedSwapError() => const _Info(
+                        icon: Icons.cloud_off,
+                        title: 'Er ging iets mis',
+                        body: 'De aanbevelingen konden niet geladen worden.',
+                      ),
+                    RuleBasedSwapFound(
+                      :final groups,
+                      :final allRanked,
+                      :final source,
+                      :final configs
+                    ) =>
+                      _buildFound(groups, allRanked, source, configs),
+                  },
+                ),
       ),
     );
   }
@@ -133,7 +151,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       if (t != null && t.isNotEmpty) availableTypes.add(t);
     }
     final sortedTypes = availableTypes.toList()
-      ..sort((a, b) => (_snackTypeLabels[a] ?? a).compareTo(_snackTypeLabels[b] ?? b));
+      ..sort((a, b) =>
+          (_snackTypeLabels[a] ?? a).compareTo(_snackTypeLabels[b] ?? b));
 
     // De vaste groepen (Minder kcal, Meer eiwit, Minder suiker, Overall,
     // Andere opties) blijven ALTIJD zichtbaar. De categorie-chips zijn een
@@ -147,7 +166,8 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             configs: configs,
             source: source,
             ranked: allRanked
-                .where((r) => _snackTypeFilters.contains(r.candidate.features.snackType))
+                .where((r) =>
+                    _snackTypeFilters.contains(r.candidate.features.snackType))
                 .toList(),
             perGroupLimit: 10,
           );
@@ -155,11 +175,23 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        for (final group in groups) _GroupSection(group: group, onLog: _logSwap),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _selectedGoal = null),
+            icon: const Icon(Icons.tune),
+            label: const Text('Ander doel kiezen'),
+          ),
+        ),
+        for (final group in groups)
+          _GroupSection(group: group, onLog: _logSwap),
         if (sortedTypes.length > 1) ...[
           const Divider(height: 24),
           const Text('Extra alternatief zoeken',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.navy)),
+              style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.navy)),
           const SizedBox(height: 4),
           const Text('Vink één of meer categorieën aan.',
               style: TextStyle(color: AppColors.slate, fontSize: 12)),
@@ -186,8 +218,50 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           if (extraGroups.isEmpty && _snackTypeFilters.isNotEmpty)
             const Text('Niks gevonden in deze categorie(ën).',
                 style: TextStyle(color: AppColors.slate)),
-          for (final group in extraGroups) _GroupSection(group: group, onLog: _logSwap),
+          for (final group in extraGroups)
+            _GroupSection(group: group, onLog: _logSwap),
         ],
+      ],
+    );
+  }
+}
+
+class _GoalChooser extends StatelessWidget {
+  const _GoalChooser({required this.onSelected});
+  final ValueChanged<SwapGoal> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const icons = {
+      SwapGoal.meerEiwit: Icons.fitness_center,
+      SwapGoal.minderKcal: Icons.local_fire_department_outlined,
+      SwapGoal.minderSuiker: Icons.cake_outlined,
+      SwapGoal.besteOverall: Icons.auto_awesome,
+    };
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const Text('Wat voor swap zoek je?',
+            style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: AppColors.navy)),
+        const SizedBox(height: 8),
+        const Text('Kies wat je met deze swap wilt verbeteren.',
+            style: TextStyle(color: AppColors.slate)),
+        const SizedBox(height: 24),
+        for (final goal in SwapGoal.values)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: FilledButton.icon(
+              onPressed: () => onSelected(goal),
+              icon: Icon(icons[goal]),
+              label: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                child: Text(goal.label),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -207,7 +281,9 @@ class _GroupSection extends StatelessWidget {
         children: [
           Text(group.label,
               style: const TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.navy)),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.navy)),
           const SizedBox(height: 10),
           for (final result in group.results)
             _SwapCard(result: result, onLog: () => onLog(result.candidate)),
@@ -251,7 +327,8 @@ class _SwapCard extends StatelessWidget {
                             color: AppColors.navy)),
                     if (item.brand != null && item.brand!.isNotEmpty)
                       Text(item.brand!,
-                          style: const TextStyle(color: AppColors.slate, fontSize: 13)),
+                          style: const TextStyle(
+                              color: AppColors.slate, fontSize: 13)),
                   ],
                 ),
               ),
@@ -260,8 +337,15 @@ class _SwapCard extends StatelessWidget {
           ),
           if (result.reasons.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(result.reasons.join(' · '),
+            Text(result.userReason ?? result.reasons.join(' · '),
                 style: const TextStyle(color: AppColors.ink, height: 1.35)),
+            if (result.reasonCodes.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(result.reasonCodes.join(' · '),
+                    style:
+                        const TextStyle(color: AppColors.slate, fontSize: 11)),
+              ),
           ],
           if (_hasNutrition) ...[
             const SizedBox(height: 12),
@@ -269,9 +353,18 @@ class _SwapCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (item.kcal100 != null) _pill('${_fmt(item.kcal100!)} kcal /100g'),
-                if (item.sugar100 != null) _pill('${_fmt(item.sugar100!)}g suiker /100g'),
-                if (item.protein100 != null) _pill('${_fmt(item.protein100!)}g eiwit /100g'),
+                if (result.usesServingData && item.kcalServing != null)
+                  _pill('${_fmt(item.kcalServing!)} kcal /portie'),
+                if (result.usesServingData && item.sugarServing != null)
+                  _pill('${_fmt(item.sugarServing!)}g suiker /portie'),
+                if (result.usesServingData && item.proteinServing != null)
+                  _pill('${_fmt(item.proteinServing!)}g eiwit /portie'),
+                if (!result.usesServingData && item.kcal100 != null)
+                  _pill('${_fmt(item.kcal100!)} kcal /100g'),
+                if (!result.usesServingData && item.sugar100 != null)
+                  _pill('${_fmt(item.sugar100!)}g suiker /100g'),
+                if (!result.usesServingData && item.protein100 != null)
+                  _pill('${_fmt(item.protein100!)}g eiwit /100g'),
               ],
             ),
           ],
@@ -281,11 +374,13 @@ class _SwapCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, size: 14, color: AppColors.slate),
+                  const Icon(Icons.info_outline,
+                      size: 14, color: AppColors.slate),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(w,
-                        style: const TextStyle(fontSize: 11, color: AppColors.slate)),
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.slate)),
                   ),
                 ],
               ),
@@ -318,7 +413,9 @@ class _SwapCard extends StatelessWidget {
         ),
         child: Text(text,
             style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.navy)),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.navy)),
       );
 
   String _fmt(double v) =>
@@ -339,13 +436,19 @@ class _ScoreBadge extends StatelessWidget {
       ),
       child: Text('score ${score.round()}',
           style: const TextStyle(
-              color: AppColors.navy, fontWeight: FontWeight.w800, fontSize: 12)),
+              color: AppColors.navy,
+              fontWeight: FontWeight.w800,
+              fontSize: 12)),
     );
   }
 }
 
 class _Info extends StatelessWidget {
-  const _Info({required this.icon, required this.title, required this.body, this.action});
+  const _Info(
+      {required this.icon,
+      required this.title,
+      required this.body,
+      this.action});
   final IconData icon;
   final String title;
   final String body;
@@ -363,7 +466,9 @@ class _Info extends StatelessWidget {
             const SizedBox(height: 12),
             Text(title,
                 style: const TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.navy)),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: AppColors.navy)),
             const SizedBox(height: 6),
             Text(body,
                 textAlign: TextAlign.center,
