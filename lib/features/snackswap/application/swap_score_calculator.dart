@@ -153,6 +153,12 @@ class SwapScoreCalculator {
     );
   }
 
+  // Gewichtsprofielen per `category_cluster`. Let op: onze database gebruikt
+  // de Nederlandse cluster-waarden (zoet/drank/zuivel/hartig/fruit_groente/
+  // maaltijd/overig uit swap_family_mapping), niet de Engelse voorbeeldnamen
+  // uit de oorspronkelijke spec. 'maaltijd' bundelt zowel brood/bakkerij als
+  // kant-en-klaarmaaltijden, dus dat profiel is een gewogen mix van de
+  // oorspronkelijke 'bakery_grains'- en 'meals'-gewichten.
   static double? _overallScore(
       SwapCandidate source, SwapCandidate candidate, _NutritionPair p) {
     final cluster = source.features.categoryCluster;
@@ -165,27 +171,33 @@ class SwapScoreCalculator {
     final similarity =
         similarityScore(source.features, candidate.features) / 100;
     return switch (cluster) {
-      'beverages' =>
+      'drank' =>
         sugar * 45 + kcal * 35 + sat * 5 + salt * 5 + similarity * 10,
-      'sweet_snacks' =>
+      'zoet' =>
         sugar * 35 + kcal * 25 + sat * 20 + fiber * 10 + protein * 5 + salt * 5,
-      'savory_snacks' =>
+      'hartig' =>
         kcal * 25 + salt * 30 + sat * 20 + fiber * 15 + protein * 10,
-      'dairy' =>
+      'zuivel' =>
         protein * 25 + sugar * 25 + kcal * 20 + sat * 15 + fiber * 5 + salt * 5,
-      'bakery_grains' => fiber * 30 +
+      'maaltijd' => fiber * 22 +
           protein * 20 +
+          kcal * 20 +
+          salt * 20 +
+          sugar * 8 +
+          sat * 10,
+      'fruit_groente' => fiber * 20 +
+          sugar * 20 +
           kcal * 15 +
-          sugar * 15 +
-          salt * 15 +
-          sat * 5,
-      'spreads_sauces' => kcal * 25 +
-          sugar * 25 +
-          sat * 20 +
-          protein * 10 +
+          protein * 15 +
+          salt * 10 +
+          sat * 10 +
+          similarity * 10,
+      'overig' => protein * 30 +
+          kcal * 20 +
+          sugar * 20 +
           fiber * 10 +
+          sat * 10 +
           salt * 10,
-      'meals' => kcal * 25 + protein * 20 + salt * 25 + sat * 15 + fiber * 15,
       _ => null,
     };
   }

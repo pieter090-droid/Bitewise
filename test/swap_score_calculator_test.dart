@@ -69,15 +69,50 @@ void main() {
     expect(result.excludedReason, 'hard_penalty');
   });
 
-  test('overall gebruikt de opgegeven spreads_sauces-gewichten', () {
+  test('overall gebruikt de hartig-gewichten', () {
     final source = product('a',
-        cluster: 'spreads_sauces', kcal: 500, sugar: 50, protein: 5, fiber: 2);
+        cluster: 'hartig', kcal: 500, sugar: 50, protein: 5, fiber: 2);
     final candidate = product('b',
-        cluster: 'spreads_sauces', kcal: 450, sugar: 40, protein: 6, fiber: 3);
+        cluster: 'hartig', kcal: 450, sugar: 40, protein: 6, fiber: 3);
     final result = calculator.score(
         source: source, candidate: candidate, goal: SwapGoal.besteOverall);
     expect(result.isExcluded, isFalse);
     expect(result.score, lessThan(100));
+  });
+
+  // Regressietest: swap_family_mapping.category_cluster levert altijd een
+  // van deze Nederlandse waarden (nooit de Engelse namen uit een eerder
+  // taxonomievoorbeeld). Als _overallScore ooit weer op Engelse namen zou
+  // schakelen, valt elk van deze clusters terug op _excluded(...), en faalt
+  // deze test meteen in plaats van pas op te vallen met echte productdata.
+  test('overall ondersteunt elk echt category_cluster uit de database', () {
+    for (final cluster in [
+      'drank',
+      'zoet',
+      'hartig',
+      'zuivel',
+      'fruit_groente',
+      'maaltijd',
+      'overig',
+    ]) {
+      final source = product('a',
+          cluster: cluster, kcal: 500, sugar: 50, protein: 5, fiber: 2);
+      final candidate = product('b',
+          cluster: cluster, kcal: 450, sugar: 40, protein: 6, fiber: 3);
+      final result = calculator.score(
+          source: source, candidate: candidate, goal: SwapGoal.besteOverall);
+      expect(result.excludedReason, isNot('unsupported_category_cluster'),
+          reason: 'cluster "$cluster" zou een geldig gewichtsprofiel moeten hebben');
+    }
+  });
+
+  test('overall sluit onbekend/ontbrekend category_cluster uit', () {
+    final source = product('a', cluster: null, kcal: 500);
+    final candidate = product('b', cluster: null, kcal: 450);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.besteOverall);
+    expect(result.isExcluded, isTrue);
+    expect(result.excludedReason, 'unsupported_category_cluster');
   });
 }
 
