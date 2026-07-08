@@ -246,6 +246,13 @@ final ruleBasedSwapProvider = FutureProvider.family<RuleBasedSwapOutcome,
         .where((c) => _hasAnyNutritionImprovement(source, c))
         .map((c) => calculator.scoreCrossForm(
             source: source, candidate: c, goal: goal, dayContext: dayContext))
+        // _hasAnyNutritionImprovement gate hierboven kijkt alleen naar
+        // richting (bv. kcal omlaag), niet naar de harde-penalty-regels van
+        // het gekozen doel (bv. eiwit >30% omlaag) -- zonder deze filter
+        // konden kandidaten met score 0 en geen reason-tekst tussen de
+        // echte suggesties staan (bv. "Aardbeien zero" bij Nutella +
+        // Minder kcal: minder kcal, maar eiwit-hard-penalty).
+        .where((r) => !r.isExcluded)
         .toList()
       ..sort((a, b) => b.score.compareTo(a.score));
     if (otherOptions.isNotEmpty) {

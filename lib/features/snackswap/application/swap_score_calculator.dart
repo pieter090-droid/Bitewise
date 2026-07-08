@@ -309,12 +309,39 @@ class _NutritionPair {
         _Nutrition.of(s, useServing), _Nutrition.of(c, useServing), useServing);
   }
 
+  // Per swap_family gekalibreerd op de echte serving_quantity-verdeling in de
+  // database (percentile_cont-analyse, 2026-07-08): de meeste producten in
+  // deze families hebben een realistische mediaanportie (15-40g), maar een
+  // staart van producten waar serving_quantity in werkelijkheid het hele
+  // verpakkingsgewicht is (bv. een nut_butters-pot van 602g, een cold_cuts-
+  // pak van 1500g). Families niet in deze lijst gebruiken de generieke 500g-
+  // grens (klopt al goed voor maaltijd-achtige categorieen zoals soups/
+  // ready_meals/meal_components/sandwiches_wraps, waar een portie legitiem
+  // 150-450g kan zijn).
+  static const _servingMaxByFamily = {
+    'bread_bakery': 150.0,
+    'cheese_snacks': 150.0,
+    'cold_cuts': 150.0,
+    'crackers_rice_cakes': 150.0,
+    'nuts_seeds': 150.0,
+    'cookies_biscuits': 150.0,
+    'crisps_chips': 150.0,
+    'popcorn': 150.0,
+    'granola_muesli': 150.0,
+    'hummus_legume_spreads': 150.0,
+    'savory_spreads': 100.0,
+    'chocolate_spreads': 100.0,
+    'nut_butters': 100.0,
+    'sauces_dips': 200.0,
+  };
+  static const _defaultServingMax = 500.0;
+
   static bool _plausibleServing(SwapCandidate c) {
     final q = c.servingQuantity;
     if (q == null || q <= 0) {
       return false;
     }
-    final max = c.features.swapFamily == 'bread_bakery' ? 150.0 : 500.0;
+    final max = _servingMaxByFamily[c.features.swapFamily] ?? _defaultServingMax;
     return q <= max;
   }
 }

@@ -51,6 +51,23 @@ void main() {
     expect(result.usesServingData, isFalse);
   });
 
+  test('602 gram pindakaaspot valt terug op per 100 gram', () {
+    // Gekalibreerd op de echte serving_quantity-verdeling: nut_butters heeft
+    // een mediaanportie van 15g, maar sommige producten hebben de hele
+    // pot (602g) als serving_quantity staan.
+    final source = product('a',
+        family: 'nut_butters',
+        kcal: 600,
+        servingQuantity: 602,
+        kcalServing: 3612);
+    final candidate = product('b',
+        family: 'nut_butters', kcal: 550, servingQuantity: 15, kcalServing: 82.5);
+    final result = calculator.score(
+        source: source, candidate: candidate, goal: SwapGoal.minderKcal);
+    expect(result.isExcluded, isFalse);
+    expect(result.usesServingData, isFalse);
+  });
+
   test('ontbrekende niet-doeldata is neutraal en veroorzaakt geen penalty', () {
     final source = product('a', sugar: 20);
     final candidate = product('b', sugar: 10);
