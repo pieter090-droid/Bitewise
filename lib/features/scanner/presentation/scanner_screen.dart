@@ -19,13 +19,14 @@ class ScannerScreen extends ConsumerStatefulWidget {
 }
 
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
+  // Geen `formats`-restrictie: leeg (het package-default) betekent dat
+  // mobile_scanner ALLE ondersteunde 1D-formaten herkent (EAN-13/8, UPC-A/E,
+  // Code128/39/93, ITF, Codabar, RSS enz.), niet alleen de eerder
+  // hardgecodeerde drie. Voorkomt dat producten met een minder gangbaar
+  // barcodeformaat (bv. UPC-E op kleine Amerikaanse verpakkingen) simpelweg
+  // nooit gedetecteerd worden.
   final _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
-    formats: const [
-      BarcodeFormat.ean13,
-      BarcodeFormat.ean8,
-      BarcodeFormat.upcA,
-    ],
   );
   bool _handled = false;
 
