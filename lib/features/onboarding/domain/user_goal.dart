@@ -79,14 +79,4 @@ class UserGoal {
     );
   }
 
-  /// Compacte payload voor de recommend_swaps Edge Function.
-  Map<String, dynamic> toContextJson() => {
-        'goal_type': goalType.name,
-        'calorie_target': calorieTarget,
-        'protein_target': proteinTarget,
-        'sugar_limit': sugarLimit,
-        'carbs_target': carbsTarget,
-        'preferences': preferences.map((p) => p.name).toList(),
-        'allergies': allergies.map((a) => a.name).toList(),
-      };
 }

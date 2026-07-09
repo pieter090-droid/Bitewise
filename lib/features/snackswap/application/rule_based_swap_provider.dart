@@ -9,8 +9,7 @@ import 'package:bitewise/features/tracker/domain/day_log.dart';
 
 /// Rule-based aanbevelingsengine op basis van `product_features_resolved`.
 /// Draait volledig lokaal
-/// (geen AI-aanroep); parallel aan het bestaande `recommend_swaps`-pad, dat
-/// ongemoeid blijft.
+/// (geen AI-aanroep).
 sealed class RuleBasedSwapOutcome {
   const RuleBasedSwapOutcome();
 }

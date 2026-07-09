@@ -30,13 +30,6 @@ class PreferencesService {
   Future<void> setAnalyticsEnabled(bool value) =>
       _prefs.setBool(AppConstants.prefAnalyticsEnabled, value);
 
-  /// Standaard SnackSwap-doel (opgeslagen als API-waarde, bv. 'less_sugar').
-  String get defaultGoal =>
-      _prefs.getString(AppConstants.prefDefaultGoal) ?? 'balanced';
-
-  Future<void> setDefaultGoal(String apiValue) =>
-      _prefs.setString(AppConstants.prefDefaultGoal, apiValue);
-
   /// Of SnackSwap de huidige dagtotalen mag meewegen. Standaard aan: de
   /// gebruiker kan dit in de swap-flow per direct uitzetten.
   bool get snackSwapUseDayContext =>

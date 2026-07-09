@@ -2,10 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bitewise/core/constants/app_constants.dart';
 import 'package:bitewise/core/supabase/supabase_service.dart';
-import 'package:bitewise/features/snackswap/domain/goal.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/snack_product.dart';
-import 'package:bitewise/features/snackswap/domain/swap_suggestion.dart';
 
 // --- Resultaattypes met duidelijke, aparte statussen ---
 
@@ -27,24 +25,6 @@ class LookupNotFound extends LookupOutcome {
 /// Netwerk-, config- of onverwachte fout (met leesbare melding).
 class LookupError extends LookupOutcome {
   const LookupError(this.message);
-  final String message;
-}
-
-sealed class SwapOutcome {
-  const SwapOutcome();
-}
-
-class SwapFound extends SwapOutcome {
-  const SwapFound(this.suggestions);
-  final List<SwapSuggestion> suggestions;
-}
-
-class SwapNotFound extends SwapOutcome {
-  const SwapNotFound();
-}
-
-class SwapError extends SwapOutcome {
-  const SwapError(this.message);
   final String message;
 }
 
@@ -112,50 +92,6 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
     }
   }
 
-  Future<SwapOutcome> recommendSwaps({
-    required String barcode,
-    required SnackGoal goal,
-    int limit = 3,
-  }) async {
-    if (!_supabase.isAvailable) {
-      return const SwapError(
-        'Geen backend geconfigureerd. Vul je Supabase-key in assets/env/env.json.',
-      );
-    }
-
-    try {
-      final response = await _supabase.client.functions.invoke(
-        AppConstants.fnRecommendSwaps,
-        body: {
-          'barcode': barcode.trim(),
-          'user_goal': goal.apiValue,
-          'limit': limit,
-        },
-      );
-
-      final data = response.data;
-      if (data is! Map) {
-        return const SwapError('Onverwacht antwoord van de server.');
-      }
-      final map = data.cast<String, dynamic>();
-
-      final list = (map['recommendations'] as List?) ?? const [];
-      if (map['found'] != true || list.isEmpty) {
-        return const SwapNotFound();
-      }
-
-      final suggestions = list
-          .map((e) =>
-              SwapSuggestion.fromJson((e as Map).cast<String, dynamic>()))
-          .toList()
-        ..sort((a, b) => b.score.compareTo(a.score));
-
-      return SwapFound(suggestions);
-    } catch (e) {
-      return SwapError(_friendly(e));
-    }
-  }
-
   /// Zoekt producten op naam in de Supabase `products`-tabel (voor suggesties).
   /// Leest alleen (RLS staat select toe); geeft een lege lijst bij een fout.
   Future<List<SnackProduct>> searchProducts(String query) async {
@@ -175,7 +111,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
     }
   }
 
-  // --- Rule-based SwapScore-engine (nieuw, parallel pad naast recommend_swaps) ---
+  // --- Rule-based SwapScore-engine ---
   //
   // Puur lezen; geen AI-aanroep. Zie SwapScoreCalculator voor de berekening
   // en product_features_resolved voor de schone Supabase-inputlaag.

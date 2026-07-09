@@ -4,14 +4,12 @@ abstract final class AppConstants {
 
   // Edge Function namen (Supabase).
   static const String fnLookupProduct = 'lookup_product';
-  static const String fnRecommendSwaps = 'recommend_swaps';
 
   // shared_preferences sleutels.
   static const String prefOnboardingComplete = 'onboarding_complete';
   static const String prefSyncEnabled = 'sync_enabled';
   static const String prefAnalyticsEnabled = 'analytics_enabled';
   static const String prefInstallId = 'install_id';
-  static const String prefDefaultGoal = 'default_goal';
   static const String prefCalculatorProfile = 'calculator_profile';
   static const String prefSnackSwapUseDayContext = 'snackswap_use_day_context';
 
