@@ -37,6 +37,14 @@ class PreferencesService {
   Future<void> setDefaultGoal(String apiValue) =>
       _prefs.setString(AppConstants.prefDefaultGoal, apiValue);
 
+  /// Of SnackSwap de huidige dagtotalen mag meewegen. Standaard aan: de
+  /// gebruiker kan dit in de swap-flow per direct uitzetten.
+  bool get snackSwapUseDayContext =>
+      _prefs.getBool(AppConstants.prefSnackSwapUseDayContext) ?? true;
+
+  Future<void> setSnackSwapUseDayContext(bool value) =>
+      _prefs.setBool(AppConstants.prefSnackSwapUseDayContext, value);
+
   /// Opgeslagen profiel voor de behoefteberekening (geslacht/leeftijd/lengte/
   /// gewicht/beweging), als JSON. Null als nog nooit ingevuld.
   String? get calculatorProfileJson =>

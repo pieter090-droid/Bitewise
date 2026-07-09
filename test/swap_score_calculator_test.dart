@@ -1,6 +1,8 @@
 import 'package:bitewise/features/snackswap/application/swap_score_calculator.dart';
+import 'package:bitewise/features/snackswap/application/rule_based_swap_provider.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
+import 'package:bitewise/features/tracker/domain/day_log.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -272,6 +274,87 @@ void main() {
       );
 
       expect(result.dayContext, 50);
+    });
+
+    test(
+        'suiker bijna op limiet verhoogt dagcontextscore voor suikerarme kandidaat',
+        () {
+      final source = spread('source', sugar: 50);
+      final lowSugar = spread('low-sugar', sugar: 5);
+      final highSugar = spread('high-sugar', sugar: 45);
+      const context = SwapDayContext(
+        dailySugarUsed: 38,
+        dailySugarGoal: 40,
+      );
+
+      final lowResult = calculator.score(
+        source: source,
+        candidate: lowSugar,
+        goal: SwapGoal.minderSuiker,
+        dayContext: context,
+      );
+      final highResult = calculator.score(
+        source: source,
+        candidate: highSugar,
+        goal: SwapGoal.minderSuiker,
+        dayContext: context,
+      );
+
+      expect(lowResult.dayContext, greaterThan(highResult.dayContext));
+    });
+
+    test('open eiwitdoel verhoogt dagcontextscore voor eiwitrijke kandidaat',
+        () {
+      final source = yoghurt('source', protein: 7, kcal: 120, sugar: 8);
+      final highProtein =
+          yoghurt('high-protein', protein: 25, kcal: 140, sugar: 6);
+      final lowProtein =
+          yoghurt('low-protein', protein: 4, kcal: 110, sugar: 5);
+      const context = SwapDayContext(
+        dailyProteinUsed: 40,
+        dailyProteinGoal: 120,
+      );
+
+      final highResult = calculator.score(
+        source: source,
+        candidate: highProtein,
+        goal: SwapGoal.meerEiwit,
+        dayContext: context,
+      );
+      final lowResult = calculator.score(
+        source: source,
+        candidate: lowProtein,
+        goal: SwapGoal.meerEiwit,
+        dayContext: context,
+      );
+
+      expect(highResult.dayContext, greaterThan(lowResult.dayContext));
+    });
+
+    test(
+        'DailySummary wordt veilig gemapt naar SwapDayContext zonder vezels te verzinnen',
+        () {
+      const summary = DailySummary(
+        kcal: 1200,
+        protein: 55,
+        sugar: 35,
+        carbs: 140,
+        calorieTarget: 2100,
+        proteinTarget: 110,
+        sugarLimit: 45,
+        carbsTarget: 250,
+      );
+
+      final context = swapDayContextFromSummary(summary);
+
+      expect(context.dailyKcalUsed, 1200);
+      expect(context.dailyKcalGoal, 2100);
+      expect(context.dailySugarUsed, 35);
+      expect(context.dailySugarGoal, 45);
+      expect(context.dailyProteinUsed, 55);
+      expect(context.dailyProteinGoal, 110);
+      expect(context.dailyFiberUsed, isNull);
+      expect(context.dailyFiberGoal, isNull);
     });
   });
 

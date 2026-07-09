@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:bitewise/core/preferences/preferences_service.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/snackswap/application/rule_based_swap_provider.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
@@ -53,10 +54,23 @@ class SwapScreen extends ConsumerStatefulWidget {
 
 class _SwapScreenState extends ConsumerState<SwapScreen> {
   SwapGoal? _selectedGoal;
+  late bool _useDayContext;
 
   /// Leeg = nog geen categorie gekozen. Meerdere `snack_type`-waarden
   /// tegelijk aan te vinken (bv. Zuivel + Fruit samen doorzoeken).
   final Set<String> _snackTypeFilters = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _useDayContext =
+        ref.read(preferencesServiceProvider).snackSwapUseDayContext;
+  }
+
+  void _setUseDayContext(bool value) {
+    setState(() => _useDayContext = value);
+    ref.read(preferencesServiceProvider).setSnackSwapUseDayContext(value);
+  }
 
   /// Logt een gekozen swap direct in het daglog (per 100g-waarden, zelfde
   /// eenvoudige semantiek als voorheen: 1 regel, geen gramgewicht-schaling).
@@ -91,10 +105,15 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       body: SafeArea(
         child: goal == null
             ? _GoalChooser(
+                useDayContext: _useDayContext,
+                onUseDayContextChanged: _setUseDayContext,
                 onSelected: (value) => setState(() => _selectedGoal = value))
             : ref
-                .watch(ruleBasedSwapProvider(
-                    (barcode: widget.barcode, goal: goal)))
+                .watch(ruleBasedSwapProvider((
+                  barcode: widget.barcode,
+                  goal: goal,
+                  useDayContext: _useDayContext,
+                )))
                 .when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
@@ -104,8 +123,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                     body: 'De aanbevelingen konden niet geladen worden.',
                     action: TextButton.icon(
                       onPressed: () => ref.invalidate(
-                        ruleBasedSwapProvider(
-                            (barcode: widget.barcode, goal: goal)),
+                        ruleBasedSwapProvider((
+                          barcode: widget.barcode,
+                          goal: goal,
+                          useDayContext: _useDayContext,
+                        )),
                       ),
                       icon: const Icon(Icons.refresh),
                       label: const Text('Opnieuw proberen'),
@@ -183,6 +205,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             label: const Text('Ander doel kiezen'),
           ),
         ),
+        _DayContextToggle(
+          value: _useDayContext,
+          onChanged: _setUseDayContext,
+        ),
+        const SizedBox(height: 12),
         for (final group in groups)
           _GroupSection(group: group, onLog: _logSwap),
         if (sortedTypes.length > 1) ...[
@@ -227,8 +254,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 }
 
 class _GoalChooser extends StatelessWidget {
-  const _GoalChooser({required this.onSelected});
+  const _GoalChooser({
+    required this.onSelected,
+    required this.useDayContext,
+    required this.onUseDayContextChanged,
+  });
   final ValueChanged<SwapGoal> onSelected;
+  final bool useDayContext;
+  final ValueChanged<bool> onUseDayContextChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -250,6 +283,11 @@ class _GoalChooser extends StatelessWidget {
         const Text('Kies wat je met deze swap wilt verbeteren.',
             style: TextStyle(color: AppColors.slate)),
         const SizedBox(height: 24),
+        _DayContextToggle(
+          value: useDayContext,
+          onChanged: onUseDayContextChanged,
+        ),
+        const SizedBox(height: 20),
         for (final goal in SwapGoal.values)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -263,6 +301,41 @@ class _GoalChooser extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _DayContextToggle extends StatelessWidget {
+  const _DayContextToggle({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.mist),
+      ),
+      child: SwitchListTile.adaptive(
+        contentPadding: EdgeInsets.zero,
+        value: value,
+        onChanged: onChanged,
+        title: const Text(
+          'Vandaag meewegen',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: AppColors.navy,
+          ),
+        ),
+        subtitle: const Text(
+          'We kijken naar wat je vandaag al binnen hebt, zoals kcal, suiker, eiwit en vezels.',
+          style: TextStyle(color: AppColors.slate, fontSize: 12),
+        ),
+      ),
     );
   }
 }

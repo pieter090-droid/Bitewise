@@ -4,6 +4,8 @@ import 'package:bitewise/features/snackswap/application/swap_score_calculator.da
 import 'package:bitewise/features/snackswap/data/snackswap_service.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
+import 'package:bitewise/features/tracker/application/tracker_providers.dart';
+import 'package:bitewise/features/tracker/domain/day_log.dart';
 
 /// Rule-based aanbevelingsengine op basis van `product_features_resolved`.
 /// Draait volledig lokaal
@@ -174,9 +176,28 @@ const List<Map<String, dynamic>> fallbackGroupConfigs = [
   {'slug': 'beste_keuze_vandaag', 'label': 'Overall betere suggestie'},
 ];
 
+SwapDayContext swapDayContextFromSummary(DailySummary summary) =>
+    SwapDayContext(
+      dailyKcalUsed: summary.kcal,
+      dailyKcalGoal: summary.calorieTarget.toDouble(),
+      dailySugarUsed: summary.sugar,
+      dailySugarGoal: summary.sugarLimit.toDouble(),
+      dailyProteinUsed: summary.protein,
+      dailyProteinGoal: summary.proteinTarget.toDouble(),
+      // De huidige tracker logt nog geen vezels. Bewust null laten: de
+      // calculator behandelt dit onderdeel neutraal en verzint geen data.
+      dailyFiberUsed: null,
+      dailyFiberGoal: null,
+    );
+
 /// Berekent en groepeert swap-aanbevelingen voor een gescand product.
-final ruleBasedSwapProvider = FutureProvider.family<RuleBasedSwapOutcome,
-    ({String barcode, SwapGoal goal})>((ref, request) async {
+final ruleBasedSwapProvider = FutureProvider.family<
+    RuleBasedSwapOutcome,
+    ({
+      String barcode,
+      SwapGoal goal,
+      bool useDayContext
+    })>((ref, request) async {
   final service = ref.watch(snackSwapServiceProvider);
   final barcode = request.barcode;
 
@@ -195,7 +216,9 @@ final ruleBasedSwapProvider = FutureProvider.family<RuleBasedSwapOutcome,
   if (candidates.isEmpty) return const RuleBasedSwapNotFound();
 
   final goal = request.goal;
-  const dayContext = SwapDayContext();
+  final dayContext = request.useDayContext
+      ? swapDayContextFromSummary(ref.watch(dailySummaryProvider))
+      : const SwapDayContext();
 
   final calculator = SwapScoreCalculator();
   final ranked = calculator.rankCandidates(
