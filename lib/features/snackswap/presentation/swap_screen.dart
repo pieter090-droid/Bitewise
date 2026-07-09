@@ -332,7 +332,7 @@ class _DayContextToggle extends StatelessWidget {
           ),
         ),
         subtitle: const Text(
-          'We kijken naar wat je vandaag al binnen hebt, zoals kcal, suiker, eiwit en vezels.',
+          'We kijken naar wat je vandaag al binnen hebt, zoals kcal, suiker en eiwit.',
           style: TextStyle(color: AppColors.slate, fontSize: 12),
         ),
       ),
