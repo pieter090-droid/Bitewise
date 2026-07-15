@@ -53,3 +53,11 @@
 
 ## Logboek
 - 2026-07-14: plan gestart. Takenlijst #11-#16 aangemaakt. Skelet documenten.
+- 2026-07-16: Fase 1 batch 1 (zoet) — checks A/B/C gedaan. Migratie 0074:
+  79 producten gecorrigeerd, 6 regex-wortels gefixt (R1 hagelslag-varianten,
+  R2 liquorice->candy, R3 stroopwafel/honingnoten uit siroop, R4 rijswafel
+  uit ijs, R5 maaltijdshakes uit meal_components, R6 nieuwe familie
+  baking_ingredients_non_swap). VOLGENDE STAP batch 1: handmatige leesronde
+  per familie-dump (chocolate_bars -> chocolate_confectionery -> candy_sweets
+  -> cookies_biscuits -> cakes_pastries -> ice_cream_desserts -> spreads/
+  syrups/jams), incl. chocoladetablet-consistentiecheck in chocolate_bars.
