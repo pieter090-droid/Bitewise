@@ -12,8 +12,9 @@
       candy_sweets, cookies_biscuits, cakes_pastries, ice_cream_desserts,
       sweet_spreads_other, honey_syrups, jams_fruit_spreads
       (migraties 0074-0080, 448 correcties, regelwortels R1-R10)
-- [ ] Batch 2: hartig — crisps_chips, popcorn, nuts_seeds, crackers_rice_cakes,
+- [x] Batch 2: hartig — crisps_chips, popcorn, nuts_seeds, crackers_rice_cakes,
       fried_snacks, meat_snacks, cheese_snacks, cold_cuts
+      (migraties 0081-0085, 289 correcties, regelwortels R11-R18b)
 - [ ] Batch 3: zuivel/spreads — yoghurt_skyr_quark, dairy_desserts, dairy_drinks,
       plant_based_dairy, savory_spreads, nut_butters, hummus_legume_spreads,
       butter_margarine
@@ -141,3 +142,16 @@
   schnitzels -> meat_alternatives, 4 review). Regelfixes R17 (kaasregel-
   exclusies) en R17b (grillworst in vleeswarenregel); 8 unittests groen.
   VOLGENDE STAP batch 2: leesronde cold_cuts (413) — slot van batch 2.
+- 2026-07-16 (vervolg): leesronde cold_cuts (429) klaar. Migratie 0085: 68
+  correcties (22 snackworsten [Bifi, kabanossi, knak-/bock-/cocktailworst]
+  -> meat_snacks, 20 rookworsten/verse componenten -> meal_components, 12
+  maaltijden -> ready_meals, 2 Cup-a-Soup -> soups, 3 smeersalades ->
+  savory_spreads, croissant -> bread, hamchips -> crisps, frikandellen ->
+  fried, wok pieces -> meat_alternatives, 3 review). Regelfixes R18
+  (vleeswaren-exclusies) en R18b (meat_snacks-regel uitgebreid); 10 unit-
+  tests groen. Vegan beleg blijft bewust in cold_cuts.
+  BATCH 2 (HARTIG) COMPLEET: 0081-0085, 289 correcties, wortels R11-R18b.
+  VOLGENDE STAP: batch 3 (zuivel/spreads) — yoghurt_skyr_quark,
+  dairy_desserts, dairy_drinks, plant_based_dairy, savory_spreads,
+  nut_butters, hummus_legume_spreads, butter_margarine: eerst omvang +
+  check A, dan leesrondes per familie.
