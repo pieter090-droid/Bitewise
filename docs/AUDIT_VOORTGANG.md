@@ -8,9 +8,10 @@
 > postflight per migratie, twijfel = review_required, geen AI/API-calls.
 
 ## Fase 1 — Legacy-audit alle swap-families
-- [ ] Batch 1: zoet — chocolate_bars, chocolate_confectionery, chocolate_spreads,
+- [x] Batch 1: zoet — chocolate_bars, chocolate_confectionery, chocolate_spreads,
       candy_sweets, cookies_biscuits, cakes_pastries, ice_cream_desserts,
       sweet_spreads_other, honey_syrups, jams_fruit_spreads
+      (migraties 0074-0080, 448 correcties, regelwortels R1-R10)
 - [ ] Batch 2: hartig — crisps_chips, popcorn, nuts_seeds, crackers_rice_cakes,
       fried_snacks, meat_snacks, cheese_snacks, cold_cuts
 - [ ] Batch 3: zuivel/spreads — yoghurt_skyr_quark, dairy_desserts, dairy_drinks,
@@ -88,3 +89,16 @@
   2 review_required). Geen nieuwe regelfixes nodig (R1/R2 dekten de wortels
   al). VOLGENDE STAP batch 1: leesronde cookies_biscuits (593) — laatste
   familie van batch 1 (zoet).
+- 2026-07-16 (vervolg): cookies_biscuits (599) gelezen. Migratie 0079: 168
+  correcties (42 repen -> cereal_bars, 43 gebak -> cakes_pastries, 11
+  candybars -> chocolate_bars, 10 tabletten/pralines -> confectionery, 14
+  wafels/aperitief -> crackers, 4 kaasbiscuits -> cheese_snacks, 9 bakmixen
+  -> baking, 3 whey -> supplements, 7 proteine-koeken -> protein_bars,
+  broodbeleg -> spreads, mochi -> candy, 11 review). Regelfixes R9 (candybar-
+  merkcheck voor de koekregel, met ijs-exclusie) en R10 (stroopwafel/zoete
+  wafels gaven null, nu koek) met 8 unittests groen. Migratie 0080:
+  invariant-fix, 57 rijen *_non_swap kregen is_swap_relevant=false.
+  BATCH 1 (ZOET) COMPLEET: 0074-0080, 448 datacorrecties, wortels R1-R10.
+  VOLGENDE STAP: batch 2 (hartig) — crisps_chips, popcorn, nuts_seeds,
+  crackers_rice_cakes, fried_snacks, meat_snacks, cheese_snacks, cold_cuts:
+  eerst checks A/B/C, dan leesrondes per familie.
