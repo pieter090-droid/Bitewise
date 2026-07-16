@@ -68,3 +68,9 @@
   R3-exclusie aangescherpt). VOLGENDE STAP batch 1: leesronde cakes_pastries
   (135) + ice_cream_desserts (164), daarna candy_sweets (322),
   chocolate_confectionery (~415), cookies_biscuits (593).
+- 2026-07-16 (vervolg): leesronde cakes+ijs klaar. Migratie 0076: 25
+  correcties (bakmixen -> baking, oats -> breakfast, zalmstaart -> vis,
+  whey-poeders -> supplements; regelfixes R7 cake/taart-exclusies +
+  poffertjes-canoniek en R8 whey-uit-ijs, met unittests in de dry-run).
+  VOLGENDE STAP batch 1: leesronde candy_sweets (322), daarna
+  chocolate_confectionery (~415), cookies_biscuits (593).
