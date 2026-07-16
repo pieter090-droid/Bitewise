@@ -112,3 +112,13 @@
   VOLGENDE STAP batch 2: leesronde crisps_chips (268, incl. check A-punt
   aardappelpartjes) + crackers_rice_cakes (240), daarna nuts_seeds (304,
   incl. kruidnoten), cheese_snacks (504), cold_cuts (413).
+- 2026-07-16 (vervolg): leesronde crisps_chips + crackers_rice_cakes klaar.
+  Migratie 0082: 65 correcties (27 diepvriesfriet -> meal_components [OFF-
+  categorie chips-and-fries lekte, wortel R14 friet/chocochips-exclusie in
+  chipsregel], 14 zoutjes/kroepoek/flips van crackers -> crisps, 5 kaas-
+  biscuits -> cheese_snacks, 5 rijstzoutjes/toast/pretzel -> crackers, 5
+  appel/banaanchips -> nuts_seeds droogfruit, 3 chocochips -> baking,
+  Evergreen -> cookies, Ristorante pizza -> ready_meals, dip -> sauces, 3
+  review). 7 unittests groen. VOLGENDE STAP batch 2: leesronde nuts_seeds
+  (304, incl. kruidnoten-splits), daarna cheese_snacks (504), cold_cuts
+  (413) — daarmee is batch 2 (hartig) compleet.
