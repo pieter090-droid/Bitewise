@@ -79,3 +79,12 @@
   Dextro/Lucovitaal -> functioneel, sprinkles -> bakingrediënt, 5 review).
   VOLGENDE STAP batch 1: leesronde chocolate_confectionery (~415), daarna
   cookies_biscuits (593) — daarmee is batch 1 (zoet) compleet.
+- 2026-07-16 (vervolg): chocolate_confectionery (414) gelezen. Migratie 0078:
+  72 correcties (45 drop/salmiak/pastille/turron -> candy_sweets [legacy
+  liquorice-lek, o.a. de "Suikervrij muntendrop" uit de Chokotoff-casus],
+  20 hagelslag/vlokken -> sweet_spreads_other [R1-legacy], chocolate drink ->
+  dairy_drinks, rice drink -> plant_based_dairy, couverture -> baking,
+  praline-croissant -> bread_bakery, KitKat matcha -> chocolate_bars,
+  2 review_required). Geen nieuwe regelfixes nodig (R1/R2 dekten de wortels
+  al). VOLGENDE STAP batch 1: leesronde cookies_biscuits (593) — laatste
+  familie van batch 1 (zoet).
