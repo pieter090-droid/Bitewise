@@ -61,3 +61,10 @@
   per familie-dump (chocolate_bars -> chocolate_confectionery -> candy_sweets
   -> cookies_biscuits -> cakes_pastries -> ice_cream_desserts -> spreads/
   syrups/jams), incl. chocoladetablet-consistentiecheck in chocolate_bars.
+- 2026-07-16 (vervolg): leesronde kleine zoete families klaar. Migratie 0075:
+  72 correcties (31 tablets -> confectionery, koekjes uit bars, honing-
+  gearomatiseerde niet-siropen uit honey_syrups incl. blikfruit-op-siroop ->
+  fresh_fruit, De Ruijter hagel/vlokken rechtgezet, hartige jams -> sauzen;
+  R3-exclusie aangescherpt). VOLGENDE STAP batch 1: leesronde cakes_pastries
+  (135) + ice_cream_desserts (164), daarna candy_sweets (322),
+  chocolate_confectionery (~415), cookies_biscuits (593).
