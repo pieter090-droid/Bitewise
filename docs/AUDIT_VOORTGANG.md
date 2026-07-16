@@ -102,3 +102,13 @@
   VOLGENDE STAP: batch 2 (hartig) — crisps_chips, popcorn, nuts_seeds,
   crackers_rice_cakes, fried_snacks, meat_snacks, cheese_snacks, cold_cuts:
   eerst checks A/B/C, dan leesrondes per familie.
+- 2026-07-16 (vervolg): batch 2 gestart. Check A (naam-splits) gedraaid;
+  leesronde meat_snacks (14) + popcorn (36) + fried_snacks (92) klaar.
+  Migratie 0081: 31 correcties (20 gepaneerde vis -> fish_seafood, 6
+  schnitzel/kipburger -> meal_components, 2 Croky snacksmaak-chips ->
+  crisps_chips, popcorn chicken/feuilletes/mini-frikandellen ->
+  fried_snacks). Regelfixes R11 (naam-visregel voor fried-regel), R12
+  (kip-exclusie popcorn), R13 (smaak-exclusie fried); 10 unittests groen.
+  VOLGENDE STAP batch 2: leesronde crisps_chips (268, incl. check A-punt
+  aardappelpartjes) + crackers_rice_cakes (240), daarna nuts_seeds (304,
+  incl. kruidnoten), cheese_snacks (504), cold_cuts (413).
