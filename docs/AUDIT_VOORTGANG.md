@@ -74,3 +74,8 @@
   poffertjes-canoniek en R8 whey-uit-ijs, met unittests in de dry-run).
   VOLGENDE STAP batch 1: leesronde candy_sweets (322), daarna
   chocolate_confectionery (~415), cookies_biscuits (593).
+- 2026-07-16 (vervolg): candy_sweets gelezen. Migratie 0077: 14 correcties
+  (quiche uit snoep, wafeltjes/mergpijpen -> gebak, dadels -> droogfruit,
+  Dextro/Lucovitaal -> functioneel, sprinkles -> bakingrediënt, 5 review).
+  VOLGENDE STAP batch 1: leesronde chocolate_confectionery (~415), daarna
+  cookies_biscuits (593) — daarmee is batch 1 (zoet) compleet.
