@@ -122,3 +122,13 @@
   review). 7 unittests groen. VOLGENDE STAP batch 2: leesronde nuts_seeds
   (304, incl. kruidnoten-splits), daarna cheese_snacks (504), cold_cuts
   (413) — daarmee is batch 2 (hartig) compleet.
+- 2026-07-16 (vervolg): leesronde nuts_seeds (309) klaar. Migratie 0083: 65
+  correcties (14 choco-tabletten/pralines/chocopinda's -> confectionery, 7
+  kruidnoten/stroopwafels -> cookies, 7 gebak -> cakes, 6 meerzadenbrood ->
+  bread, 3 notendranken -> plant_based_dairy, 2 cashewpasta -> nut_butters,
+  5 maaltijden -> ready_meals, pesto -> sauces, repen -> protein/cereal
+  bars, walnootolie -> oils, hazelnootburger -> meat_alternatives, 4
+  review). Regelfixes R15 (noten-exclusies + pinda/pitten in notenregel),
+  R15b (kruidnoten/pepernoten in koekregel), R16 (notendranken naar
+  plant_based_dairy); 8 unittests groen. VOLGENDE STAP batch 2: leesronde
+  cheese_snacks (504), daarna cold_cuts (413) — slot van batch 2.
