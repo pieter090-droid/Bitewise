@@ -132,3 +132,12 @@
   R15b (kruidnoten/pepernoten in koekregel), R16 (notendranken naar
   plant_based_dairy); 8 unittests groen. VOLGENDE STAP batch 2: leesronde
   cheese_snacks (504), daarna cold_cuts (413) — slot van batch 2.
+- 2026-07-16 (vervolg): leesronde cheese_snacks (509) klaar; familie is de
+  facto de kaasfamilie (kaas, geraspt, verse kazen, kaasbiscuits en kaas-
+  vervangers blijven bewust). Migratie 0084: 60 correcties (16 grillworst/
+  carpaccio -> cold_cuts, 12 mac&cheese/pizza/salades -> ready_meals, 7
+  gefrituurde kaassnacks -> fried, 5 flips/nacho's -> crisps, 3 zoutjes ->
+  crackers, 3 dips -> sauces, 4 spreads -> savory_spreads, 3 vega-
+  schnitzels -> meat_alternatives, 4 review). Regelfixes R17 (kaasregel-
+  exclusies) en R17b (grillworst in vleeswarenregel); 8 unittests groen.
+  VOLGENDE STAP batch 2: leesronde cold_cuts (413) — slot van batch 2.
