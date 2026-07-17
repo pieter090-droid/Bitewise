@@ -176,3 +176,14 @@
   granola-bekers en geiten-/schapenyoghurt blijven bewust. VOLGENDE STAP
   batch 3: leesronde dairy_drinks (204+), daarna dairy_desserts (197),
   plant_based_dairy (195+).
+- 2026-07-16 (vervolg): leesronde dairy_drinks (204) klaar; coherente
+  drankfamilie. Migratie 0088: 12 correcties (2 koffiemelk ->
+  dairy_cooking_cream_non_swap, 3 drankmix/Dolce-Gusto-pods -> hot_beverages,
+  whey 300g -> supplements, melkpoeder -> baking, Duo Penotti Milkshake ->
+  chocolate_spreads, 4 meal-replacement drinks -> review). Regelfix R24
+  (dairy_drinks-regel sluit mix/poeder/pods/maaltijddrank uit) + R25 (NIEUWE
+  drinkmelk-regel: naam eindigend op 'melk' -> dairy_drinks; dekkingslek
+  gedicht, want plain melk werd door geen regel geclassificeerd — 'melk-
+  chocolade'/melkpoeder/mix veilig uitgesloten). 9 unittests groen. VOLGENDE
+  STAP batch 3: leesronde dairy_desserts (197), daarna plant_based_dairy
+  (195+, incl. de instroom uit R16/R21).
