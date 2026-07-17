@@ -165,3 +165,14 @@
   (focaccia -> bread, krakeling/dumkes -> cookies); 10 unittests groen.
   VOLGENDE STAP batch 3: leesronde yoghurt_skyr_quark (474), daarna
   dairy_drinks (204), dairy_desserts (197), plant_based_dairy (195).
+- 2026-07-16 (vervolg): leesronde yoghurt_skyr_quark (474) klaar; grote,
+  coherente zuivelfamilie. Migratie 0087: 31 correcties (14 plantaardige
+  yoghurt/kwark/skyr -> plant_based_dairy, 5 kefir/drinkyoghurt ->
+  dairy_drinks, 4 fruitbiscuits -> cookies, 2 kwarkcake-bakmix -> baking,
+  2 muesli/topping -> granola, yoghurt-gums -> candy, yoghurtijs -> ijs,
+  rijstwafels -> crackers, 1 review). Regelfixes R21 (plantaardige zuivel
+  vóór yoghurtregel), R22 (kefir/à boire -> dairy_drinks), R23 (yoghurt-gums
+  in candy), biscuit-exclusie in yoghurtregel; 13 unittests groen. Yoghurt+
+  granola-bekers en geiten-/schapenyoghurt blijven bewust. VOLGENDE STAP
+  batch 3: leesronde dairy_drinks (204+), daarna dairy_desserts (197),
+  plant_based_dairy (195+).
