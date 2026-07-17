@@ -155,3 +155,13 @@
   dairy_desserts, dairy_drinks, plant_based_dairy, savory_spreads,
   nut_butters, hummus_legume_spreads, butter_margarine: eerst omvang +
   check A, dan leesrondes per familie.
+- 2026-07-16 (vervolg): batch 3 gestart. Leesronde 4 kleine families
+  (butter_margarine 66, hummus 62, nut_butters 165, savory_spreads 56) klaar.
+  Migratie 0086: 26 correcties (12 roomboter-bakkerij -> brood/gebak/koek/
+  kaas/baking, 11 peanut-butter-repen/muesli/ijs -> protein_bars/granola/
+  ice_cream/confectionery/cereal, 2 hummus-chips/bowl -> crisps/ready_meals,
+  artisjok -> sauces). Regelfixes R19 (nut_butters-regel sluit reep/ijs/bake
+  uit — stond vóór protein_bars), R20 (boterregel sluit bakkerij uit), R20b
+  (focaccia -> bread, krakeling/dumkes -> cookies); 10 unittests groen.
+  VOLGENDE STAP batch 3: leesronde yoghurt_skyr_quark (474), daarna
+  dairy_drinks (204), dairy_desserts (197), plant_based_dairy (195).
