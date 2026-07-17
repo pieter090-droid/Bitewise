@@ -187,3 +187,14 @@
   chocolade'/melkpoeder/mix veilig uitgesloten). 9 unittests groen. VOLGENDE
   STAP batch 3: leesronde dairy_desserts (197), daarna plant_based_dairy
   (195+, incl. de instroom uit R16/R21).
+- 2026-07-16 (vervolg): leesronde dairy_desserts (197) klaar; familie was
+  fors vervuild via legacy-AI. Migratie 0089: 82 correcties (40 plantaardige
+  desserts/yoghurt -> plant_based_dairy, 36 dairy yoghurt/skyr/kwark [FAGE/
+  Activia/Oikos/Hipro-beker/biogarde/hangop/Kvarg/Sterke Start] ->
+  yoghurt_skyr_quark, 3 Actimel/Vifit -> dairy_drinks, koffiemelk -> cream,
+  slasaus -> sauces, ProActiv -> review). Regelfix R26 (plant-merken Alpro/
+  Provamel/Oatly/Abbot Kinney/Vemondo + 'op basis van X' / 'soja/oat gurt'
+  -> plant_based_dairy); 9 unittests groen. Echte vla/mousse/pudding/
+  tiramisu/crème brûlée blijven bewust; ambigue eennaam-bekers ongemoeid.
+  VOLGENDE STAP batch 3 (slot): leesronde plant_based_dairy (nu ~275+ na de
+  instroom uit R16/R21/R26).
