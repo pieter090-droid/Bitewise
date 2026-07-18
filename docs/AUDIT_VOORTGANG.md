@@ -40,7 +40,7 @@
       (migratie 0099, ai_overwritten=0)
 
 ## Fase 3 — Model-vangrails (app, 3 losse commits)
-- [ ] 3a: hartig-vs-zoet-blokkade in "Andere opties"
+- [x] 3a: hartig-vs-zoet-blokkade in "Andere opties"
 - [ ] 3b: strengere cross-family-poort (>=2 assen of 1 fors zonder verslechtering)
 - [ ] 3c: portie-bewust scoren (serving-data waar beide kanten die hebben)
 
@@ -391,3 +391,10 @@
   De defaults staan persistent in public.swap_family_profile_defaults, zodat
   fase 5a (trigger voor nieuwe scans) en fase 6 (documentatie) dezelfde bron
   gebruiken in plaats van een kopie van de lijst.
+
+## Fase 3 — logboek
+- 2026-07-19: stap 3a afgerond. `scoreCrossForm()` blokkeert nu expliciete
+  zoet-hartigconflicten in "Andere opties" met reden
+  `sweet_savory_conflict`. Ontbrekende profielwaarden blijven permissief:
+  NULL betekent onbekend en leidt niet tot een gok. Twee regressietests
+  toegevoegd; volledige SwapScore-testset: 22/22 groen.

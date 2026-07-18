@@ -78,20 +78,22 @@ void main() {
       expect(ranked.first.candidate.barcode, 'low-sugar');
     });
 
-    test('Nutella minder kcal rankt lagere kcal vergelijkbare spread hoger',
-        () {
-      final source = spread('nutella', sugar: 50, kcal: 540);
-      final lowKcal = spread('low-kcal', sugar: 45, kcal: 300);
-      final highKcal = spread('high-kcal', sugar: 20, kcal: 610);
+    test(
+      'Nutella minder kcal rankt lagere kcal vergelijkbare spread hoger',
+      () {
+        final source = spread('nutella', sugar: 50, kcal: 540);
+        final lowKcal = spread('low-kcal', sugar: 45, kcal: 300);
+        final highKcal = spread('high-kcal', sugar: 20, kcal: 610);
 
-      final ranked = calculator.rankCandidates(
-        source: source,
-        candidates: [highKcal, lowKcal],
-        goal: SwapGoal.minderKcal,
-      );
+        final ranked = calculator.rankCandidates(
+          source: source,
+          candidates: [highKcal, lowKcal],
+          goal: SwapGoal.minderKcal,
+        );
 
-      expect(ranked.first.candidate.barcode, 'low-kcal');
-    });
+        expect(ranked.first.candidate.barcode, 'low-kcal');
+      },
+    );
 
     test('Magnum minder kcal rankt lager-kcal dessert hoger', () {
       final source = iceCream('magnum', kcal: 310, sugar: 28);
@@ -164,6 +166,72 @@ void main() {
   });
 
   group('rare swaps', () {
+    test('Andere opties blokkeert expliciete zoet-hartig botsing', () {
+      final result = calculator.scoreCrossForm(
+        source: spread('sweet-source'),
+        candidate: product(
+          'savory-candidate',
+          family: 'savory_spreads',
+          cluster: 'hartig',
+          snackType: 'savory_spread',
+          form: 'spread',
+          mode: 'spread_on_bread',
+          taste: const ['savory'],
+          texture: const ['creamy'],
+          moment: const ['breakfast'],
+          isSweet: false,
+          isSalty: true,
+          kcal: 300,
+          sugar: 2,
+          protein: 8,
+          fiber: 3,
+          fat: 20,
+          carbs: 8,
+          salt: 1,
+        ),
+        goal: SwapGoal.minderSuiker,
+      );
+
+      expect(result.isExcluded, isTrue);
+      expect(result.excludedReason, 'sweet_savory_conflict');
+    });
+
+    test('Andere opties gokt niet als zoet-hartig profiel onbekend is', () {
+      final result = calculator.scoreCrossForm(
+        source: product(
+          'unknown-source',
+          family: 'mixed_source',
+          cluster: 'overig',
+          snackType: 'spread',
+          form: 'spread',
+          mode: 'spread_on_bread',
+          kcal: 500,
+          sugar: 30,
+          protein: 4,
+          fiber: 2,
+          fat: 25,
+          carbs: 40,
+        ),
+        candidate: product(
+          'unknown-candidate',
+          family: 'mixed_candidate',
+          cluster: 'overig',
+          snackType: 'spread',
+          form: 'spread',
+          mode: 'spread_on_bread',
+          kcal: 350,
+          sugar: 15,
+          protein: 6,
+          fiber: 3,
+          fat: 15,
+          carbs: 30,
+        ),
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.excludedReason, isNot('sweet_savory_conflict'));
+    });
+
     test('Nutella naar water mag niet', () {
       final result = calculator.score(
         source: spread('nutella'),
@@ -213,7 +281,8 @@ void main() {
         goal: SwapGoal.minderSuiker,
       );
 
-      final recomputed = result.goalMatch * .30 +
+      final recomputed =
+          result.goalMatch * .30 +
           result.nutritionImprovement * .25 +
           result.dayContext * .15 +
           result.similarity * .15 +
@@ -277,85 +346,94 @@ void main() {
     });
 
     test(
-        'suiker bijna op limiet verhoogt dagcontextscore voor suikerarme kandidaat',
-        () {
-      final source = spread('source', sugar: 50);
-      final lowSugar = spread('low-sugar', sugar: 5);
-      final highSugar = spread('high-sugar', sugar: 45);
-      const context = SwapDayContext(
-        dailySugarUsed: 38,
-        dailySugarGoal: 40,
-      );
+      'suiker bijna op limiet verhoogt dagcontextscore voor suikerarme kandidaat',
+      () {
+        final source = spread('source', sugar: 50);
+        final lowSugar = spread('low-sugar', sugar: 5);
+        final highSugar = spread('high-sugar', sugar: 45);
+        const context = SwapDayContext(dailySugarUsed: 38, dailySugarGoal: 40);
 
-      final lowResult = calculator.score(
-        source: source,
-        candidate: lowSugar,
-        goal: SwapGoal.minderSuiker,
-        dayContext: context,
-      );
-      final highResult = calculator.score(
-        source: source,
-        candidate: highSugar,
-        goal: SwapGoal.minderSuiker,
-        dayContext: context,
-      );
+        final lowResult = calculator.score(
+          source: source,
+          candidate: lowSugar,
+          goal: SwapGoal.minderSuiker,
+          dayContext: context,
+        );
+        final highResult = calculator.score(
+          source: source,
+          candidate: highSugar,
+          goal: SwapGoal.minderSuiker,
+          dayContext: context,
+        );
 
-      expect(lowResult.dayContext, greaterThan(highResult.dayContext));
-    });
-
-    test('open eiwitdoel verhoogt dagcontextscore voor eiwitrijke kandidaat',
-        () {
-      final source = yoghurt('source', protein: 7, kcal: 120, sugar: 8);
-      final highProtein =
-          yoghurt('high-protein', protein: 25, kcal: 140, sugar: 6);
-      final lowProtein =
-          yoghurt('low-protein', protein: 4, kcal: 110, sugar: 5);
-      const context = SwapDayContext(
-        dailyProteinUsed: 40,
-        dailyProteinGoal: 120,
-      );
-
-      final highResult = calculator.score(
-        source: source,
-        candidate: highProtein,
-        goal: SwapGoal.meerEiwit,
-        dayContext: context,
-      );
-      final lowResult = calculator.score(
-        source: source,
-        candidate: lowProtein,
-        goal: SwapGoal.meerEiwit,
-        dayContext: context,
-      );
-
-      expect(highResult.dayContext, greaterThan(lowResult.dayContext));
-    });
+        expect(lowResult.dayContext, greaterThan(highResult.dayContext));
+      },
+    );
 
     test(
-        'DailySummary wordt veilig gemapt naar SwapDayContext zonder vezels te verzinnen',
-        () {
-      const summary = DailySummary(
-        kcal: 1200,
-        protein: 55,
-        sugar: 35,
-        carbs: 140,
-        calorieTarget: 2100,
-        proteinTarget: 110,
-        sugarLimit: 45,
-        carbsTarget: 250,
-      );
+      'open eiwitdoel verhoogt dagcontextscore voor eiwitrijke kandidaat',
+      () {
+        final source = yoghurt('source', protein: 7, kcal: 120, sugar: 8);
+        final highProtein = yoghurt(
+          'high-protein',
+          protein: 25,
+          kcal: 140,
+          sugar: 6,
+        );
+        final lowProtein = yoghurt(
+          'low-protein',
+          protein: 4,
+          kcal: 110,
+          sugar: 5,
+        );
+        const context = SwapDayContext(
+          dailyProteinUsed: 40,
+          dailyProteinGoal: 120,
+        );
 
-      final context = swapDayContextFromSummary(summary);
+        final highResult = calculator.score(
+          source: source,
+          candidate: highProtein,
+          goal: SwapGoal.meerEiwit,
+          dayContext: context,
+        );
+        final lowResult = calculator.score(
+          source: source,
+          candidate: lowProtein,
+          goal: SwapGoal.meerEiwit,
+          dayContext: context,
+        );
 
-      expect(context.dailyKcalUsed, 1200);
-      expect(context.dailyKcalGoal, 2100);
-      expect(context.dailySugarUsed, 35);
-      expect(context.dailySugarGoal, 45);
-      expect(context.dailyProteinUsed, 55);
-      expect(context.dailyProteinGoal, 110);
-      expect(context.dailyFiberUsed, isNull);
-      expect(context.dailyFiberGoal, isNull);
-    });
+        expect(highResult.dayContext, greaterThan(lowResult.dayContext));
+      },
+    );
+
+    test(
+      'DailySummary wordt veilig gemapt naar SwapDayContext zonder vezels te verzinnen',
+      () {
+        const summary = DailySummary(
+          kcal: 1200,
+          protein: 55,
+          sugar: 35,
+          carbs: 140,
+          calorieTarget: 2100,
+          proteinTarget: 110,
+          sugarLimit: 45,
+          carbsTarget: 250,
+        );
+
+        final context = swapDayContextFromSummary(summary);
+
+        expect(context.dailyKcalUsed, 1200);
+        expect(context.dailyKcalGoal, 2100);
+        expect(context.dailySugarUsed, 35);
+        expect(context.dailySugarGoal, 45);
+        expect(context.dailyProteinUsed, 55);
+        expect(context.dailyProteinGoal, 110);
+        expect(context.dailyFiberUsed, isNull);
+        expect(context.dailyFiberGoal, isNull);
+      },
+    );
   });
 
   test('resolved view modelvelden worden gemapt naar ProductFeatures', () {
@@ -396,134 +474,131 @@ SwapCandidate spread(
   double? salt = .2,
   double? saturatedFat = 10,
   int? nova = 4,
-}) =>
-    product(
-      barcode,
-      family: 'chocolate_spreads',
-      cluster: 'zoet',
-      snackType: 'sweet_spread',
-      form: 'spread',
-      mode: 'spread_on_bread',
-      taste: const ['chocolate', 'sweet'],
-      texture: const ['creamy'],
-      moment: const ['breakfast', 'snack'],
-      isSweet: true,
-      isChocolate: true,
-      status: status,
-      isSwapRelevant: isSwapRelevant,
-      kcal: kcal,
-      sugar: sugar,
-      protein: protein,
-      fiber: fiber,
-      fat: fat,
-      carbs: carbs,
-      salt: salt,
-      saturatedFat: saturatedFat,
-      nova: nova,
-    );
+}) => product(
+  barcode,
+  family: 'chocolate_spreads',
+  cluster: 'zoet',
+  snackType: 'sweet_spread',
+  form: 'spread',
+  mode: 'spread_on_bread',
+  taste: const ['chocolate', 'sweet'],
+  texture: const ['creamy'],
+  moment: const ['breakfast', 'snack'],
+  isSweet: true,
+  isChocolate: true,
+  status: status,
+  isSwapRelevant: isSwapRelevant,
+  kcal: kcal,
+  sugar: sugar,
+  protein: protein,
+  fiber: fiber,
+  fat: fat,
+  carbs: carbs,
+  salt: salt,
+  saturatedFat: saturatedFat,
+  nova: nova,
+);
 
 SwapCandidate iceCream(
   String barcode, {
   double? kcal = 280,
   double? sugar = 25,
-}) =>
-    product(
-      barcode,
-      family: 'ice_cream_desserts',
-      cluster: 'zuivel',
-      snackType: 'ice_cream',
-      form: 'ice_cream',
-      mode: 'dessert',
-      taste: const ['sweet', 'vanilla'],
-      texture: const ['creamy'],
-      moment: const ['dessert', 'snack'],
-      isSweet: true,
-      isDairy: true,
-      kcal: kcal,
-      sugar: sugar,
-      protein: 4,
-      fiber: 1,
-      fat: 15,
-      carbs: 30,
-    );
+}) => product(
+  barcode,
+  family: 'ice_cream_desserts',
+  cluster: 'zuivel',
+  snackType: 'ice_cream',
+  form: 'ice_cream',
+  mode: 'dessert',
+  taste: const ['sweet', 'vanilla'],
+  texture: const ['creamy'],
+  moment: const ['dessert', 'snack'],
+  isSweet: true,
+  isDairy: true,
+  kcal: kcal,
+  sugar: sugar,
+  protein: 4,
+  fiber: 1,
+  fat: 15,
+  carbs: 30,
+);
 
 SwapCandidate yoghurt(
   String barcode, {
   double? protein,
   double? kcal,
   double? sugar,
-}) =>
-    product(
-      barcode,
-      family: 'yoghurt_skyr_quark',
-      cluster: 'zuivel',
-      snackType: 'yoghurt',
-      form: 'cup',
-      mode: 'spoonable',
-      taste: const ['dairy'],
-      texture: const ['creamy'],
-      moment: const ['breakfast', 'snack'],
-      isDairy: true,
-      protein: protein,
-      kcal: kcal,
-      sugar: sugar,
-      fiber: 0,
-      fat: 3,
-      carbs: 8,
-    );
+}) => product(
+  barcode,
+  family: 'yoghurt_skyr_quark',
+  cluster: 'zuivel',
+  snackType: 'yoghurt',
+  form: 'cup',
+  mode: 'spoonable',
+  taste: const ['dairy'],
+  texture: const ['creamy'],
+  moment: const ['breakfast', 'snack'],
+  isDairy: true,
+  protein: protein,
+  kcal: kcal,
+  sugar: sugar,
+  fiber: 0,
+  fat: 3,
+  carbs: 8,
+);
 
 SwapCandidate drink(String barcode) => product(
-      barcode,
-      family: 'water',
-      cluster: 'drank',
-      snackType: 'water',
-      form: 'drink',
-      mode: 'drink',
-      taste: const ['neutral'],
-      texture: const ['liquid'],
-      moment: const ['drink'],
-      isDrink: true,
-      kcal: 0,
-      sugar: 0,
-      protein: 0,
-      fiber: 0,
-      fat: 0,
-      carbs: 0,
-    );
+  barcode,
+  family: 'water',
+  cluster: 'drank',
+  snackType: 'water',
+  form: 'drink',
+  mode: 'drink',
+  taste: const ['neutral'],
+  texture: const ['liquid'],
+  moment: const ['drink'],
+  isDrink: true,
+  kcal: 0,
+  sugar: 0,
+  protein: 0,
+  fiber: 0,
+  fat: 0,
+  carbs: 0,
+);
 
 SwapCandidate rawFish(String barcode) => product(
-      barcode,
-      family: 'fish_seafood',
-      cluster: 'maaltijd',
-      snackType: 'raw_fish',
-      form: 'raw_piece',
-      mode: 'cook_first',
-      isSwapRelevant: false,
-      kcal: 140,
-      sugar: 0,
-      protein: 22,
-      fiber: 0,
-      fat: 5,
-      carbs: 0,
-    );
+  barcode,
+  family: 'fish_seafood',
+  cluster: 'maaltijd',
+  snackType: 'raw_fish',
+  form: 'raw_piece',
+  mode: 'cook_first',
+  isSwapRelevant: false,
+  kcal: 140,
+  sugar: 0,
+  protein: 22,
+  fiber: 0,
+  fat: 5,
+  carbs: 0,
+);
 
 SwapCandidate wrap(String barcode) => product(
-      barcode,
-      family: 'sandwiches_wraps',
-      cluster: 'maaltijd',
-      snackType: 'wrap',
-      form: 'wrap',
-      mode: 'ready_to_eat',
-      taste: const ['savory'],
-      texture: const ['soft'],
-      moment: const ['lunch'],
-      kcal: 240,
-      sugar: 3,
-      protein: 12,
-      fiber: 4,
-      fat: 8,
-      carbs: 30,
-    );
+  barcode,
+  family: 'sandwiches_wraps',
+  cluster: 'maaltijd',
+  snackType: 'wrap',
+  form: 'wrap',
+  mode: 'ready_to_eat',
+  taste: const ['savory'],
+  texture: const ['soft'],
+  moment: const ['lunch'],
+  kcal: 240,
+  sugar: 3,
+  protein: 12,
+  fiber: 4,
+  fat: 8,
+  carbs: 30,
+);
 
 SwapCandidate product(
   String barcode, {
@@ -556,41 +631,40 @@ SwapCandidate product(
   double? dataQuality = 90,
   double? aiConfidence = .9,
   double? completeness = 90,
-}) =>
-    SwapCandidate(
-      barcode: barcode,
-      name: barcode,
-      kcal100: kcal,
-      sugar100: sugar,
-      protein100: protein,
-      fiber100: fiber,
-      fat100: fat,
-      carbs100: carbs,
-      salt100: salt,
-      saturatedFat100: saturatedFat,
-      novaGroup: nova,
-      nutriscoreGrade: nutriscoreGrade,
-      completeness: completeness,
-      features: ProductFeatures(
-        barcode: barcode,
-        classificationStatus: status,
-        swapFamily: family,
-        categoryCluster: cluster,
-        snackType: snackType,
-        productForm: form,
-        consumptionMode: mode,
-        usageContext: moment,
-        tasteProfile: taste,
-        textureProfile: texture,
-        useMoment: moment,
-        isSweet: isSweet,
-        isSalty: isSalty,
-        isDrink: isDrink,
-        isDairy: isDairy,
-        isChocolate: isChocolate,
-        isCrunchy: isCrunchy,
-        isSwapRelevant: isSwapRelevant,
-        dataQualityScore: dataQuality,
-        aiConfidence: aiConfidence,
-      ),
-    );
+}) => SwapCandidate(
+  barcode: barcode,
+  name: barcode,
+  kcal100: kcal,
+  sugar100: sugar,
+  protein100: protein,
+  fiber100: fiber,
+  fat100: fat,
+  carbs100: carbs,
+  salt100: salt,
+  saturatedFat100: saturatedFat,
+  novaGroup: nova,
+  nutriscoreGrade: nutriscoreGrade,
+  completeness: completeness,
+  features: ProductFeatures(
+    barcode: barcode,
+    classificationStatus: status,
+    swapFamily: family,
+    categoryCluster: cluster,
+    snackType: snackType,
+    productForm: form,
+    consumptionMode: mode,
+    usageContext: moment,
+    tasteProfile: taste,
+    textureProfile: texture,
+    useMoment: moment,
+    isSweet: isSweet,
+    isSalty: isSalty,
+    isDrink: isDrink,
+    isDairy: isDairy,
+    isChocolate: isChocolate,
+    isCrunchy: isCrunchy,
+    isSwapRelevant: isSwapRelevant,
+    dataQualityScore: dataQuality,
+    aiConfidence: aiConfidence,
+  ),
+);
