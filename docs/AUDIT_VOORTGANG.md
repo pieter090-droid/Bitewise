@@ -15,9 +15,10 @@
 - [x] Batch 2: hartig — crisps_chips, popcorn, nuts_seeds, crackers_rice_cakes,
       fried_snacks, meat_snacks, cheese_snacks, cold_cuts
       (migraties 0081-0085, 289 correcties, regelwortels R11-R18b)
-- [ ] Batch 3: zuivel/spreads — yoghurt_skyr_quark, dairy_desserts, dairy_drinks,
+- [x] Batch 3: zuivel/spreads — yoghurt_skyr_quark, dairy_desserts, dairy_drinks,
       plant_based_dairy, savory_spreads, nut_butters, hummus_legume_spreads,
       butter_margarine
+      (migraties 0086-0090, 214 correcties, regelwortels R19-R29)
 - [ ] Batch 4: dranken/overig — soft_drinks_regular, soft_drinks_light_zero,
       fruit_juices, hot_beverages, water, energy_drinks, sports_drinks,
       alcohol_drinks, smoothies, soups, sauces_dips, mayonnaise_sauces
@@ -198,3 +199,16 @@
   tiramisu/crème brûlée blijven bewust; ambigue eennaam-bekers ongemoeid.
   VOLGENDE STAP batch 3 (slot): leesronde plant_based_dairy (nu ~275+ na de
   instroom uit R16/R21/R26).
+- 2026-07-16 (vervolg): leesronde plant_based_dairy (249) klaar. Migratie
+  0090: 63 correcties (16 plantaardige kaasvervangers [Violife/Soyananda/
+  plakken/rasp] -> cheese_snacks, Pa'lais -> savory_spreads, 21 plantaardige
+  kookroom [cuisine/kochcreme/keukenroom/fraiche/whipping/topping/creamers]
+  -> dairy_cooking_cream_non_swap, 25 blik-kokosmelk -> idem). Regelfixes
+  R29 (plantaardige kaas -> cheese_snacks), R28 (plantaardige kookroom),
+  R27 (kokosmelk zonder 'drink' -> kookroom; kokosDRINK blijft plantaardig);
+  10 unittests groen.
+  BATCH 3 (ZUIVEL/SPREADS) COMPLEET: 0086-0090, 214 correcties, R19-R29.
+  VOLGENDE STAP: batch 4 (dranken/overig) — soft_drinks_regular,
+  soft_drinks_light_zero, fruit_juices, hot_beverages, water, energy_drinks,
+  sports_drinks, alcohol_drinks, smoothies, soups, sauces_dips,
+  mayonnaise_sauces: eerst omvang, dan leesrondes per familie.
