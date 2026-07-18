@@ -243,3 +243,18 @@
   Limonadesiroop blijft bewust frisdrank; het concentraat-vs-kant-en-klaar
   probleem hoort bij fase 3c (portie-bewust scoren).
   VOLGENDE STAP batch 4 deel 3: hot_beverages (272+) + soups (218+).
+- 2026-07-16 (vervolg): deel 3 klaar — hot_beverages (286) + soups (220);
+  beide families in de kern schoon. Migratie 0093: 74 correcties (23 RTD-
+  melkkoffies -> dairy_drinks, 8 koffiemelk/creamer -> cooking cream, 7
+  koffie/thee-poeders -> supplements, 9 kant-en-klare ijsthees -> frisdrank/
+  zero, 3 koffiekoekjes -> cookies, 11 soepgroente/verspakketten ->
+  fresh_vegetables, 4 soepballetjes + 2 peterselie -> meal_components, 3
+  soepstengels/croutons -> crackers, sushi-gember -> sauces, bakcacao ->
+  baking, Stelz -> alcohol, 1 review). Regelfixes R37 (koffiemelk ->
+  cooking cream), R38 (koffiewafel/Cafe Noir -> koek), R39 ('iced tea'/
+  ijsthee/fuze tea; 'ice.?tea' ving alleen "ice tea"), R40 (soepregel sluit
+  soepgroente/-stengels/-balletjes/verspakket uit) + bouillon toegevoegd aan
+  de soepregel (DERDE dekkingslek: 'bouillonblokjes' bevat geen soep/soup en
+  werd door geen regel geclassificeerd). 15 unittests groen.
+  VOLGENDE STAP batch 4 deel 4 (slot): sauces_dips (668+) +
+  mayonnaise_sauces (61).
