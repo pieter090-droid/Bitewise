@@ -226,3 +226,20 @@
   groen. VOLGENDE STAP batch 4 deel 2: soft_drinks_regular (435) +
   fruit_juices (160), incl. consistente behandeling van limonadeSIROOP-
   concentraten (Karvan Cevitam/Raak, ook die in light_zero).
+- 2026-07-16 (vervolg): deel 2 klaar — soft_drinks_regular (435) +
+  fruit_juices (160). soft_drinks_regular was de meest vervuilde
+  drankfamilie (OFF-categorie 'sweetened beverages' trok alles zoet+vloeibaar
+  aan). Migratie 0092: 129 correcties (42 zuiveldranken incl. 16 RTD-
+  melkkoffies -> dairy_drinks, 14 koffie/thee-bereidingen -> hot_beverages,
+  12 eiwitpoeders -> supplements, 9 alcoholvrije bieren -> alcohol, 10
+  energydrinks + 7 sportdranken, 3 plantaardig, 7 groente-/fruitsappen, 4
+  snoep, 6 fruitconserven/knijpfruit -> fresh_fruit, 6 kookcitroensap ->
+  sauces, plus losse missers). Regelfixes R32 (RTD-melkkoffie ->
+  dairy_drinks, pads blijven hot_beverages), R33 (drankmerken Fristi/
+  Optimel/Vifit/Chocomel/HiPro), R34 (clear whey/eiwitlimonade ->
+  supplements), R35 (alcoholvrij/radler/pils/lager/IPA) en R36 (NIEUW
+  dekkingslek gedicht: 'sinaasappelsap'/'appelsap' matchten niet op
+  '\msap\M'; 'op sap'/siroop/saus uitgesloten). 18 unittests groen.
+  Limonadesiroop blijft bewust frisdrank; het concentraat-vs-kant-en-klaar
+  probleem hoort bij fase 3c (portie-bewust scoren).
+  VOLGENDE STAP batch 4 deel 3: hot_beverages (272+) + soups (218+).
