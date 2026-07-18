@@ -312,3 +312,18 @@
   zalmplakken, 1 review. 11 unittests groen. Postflight: sandwiches_wraps
   148 -> 33 (alleen nog echt belegd), bread_bakery 507 -> 535.
   VOLGENDE STAP batch 5 deel 3: fresh_fruit (196+) + fresh_vegetables (693+).
+- 2026-07-17 (vervolg): deel 3 klaar — fresh_fruit (196) + fresh_vegetables
+  (693). Vanaf hier is de werkwijze op verzoek van de gebruiker versneld:
+  patroon-gebaseerde correcties (regex-groepen over de familiedump) in plaats
+  van product-voor-product beoordeling. Snapshot/dry-run/postflight en
+  "twijfel = review_required" blijven ongewijzigd gelden. Migratie 0097:
+  156 correcties. Grootste groepen: 15 babyvoeding/knijpfruit, 38 gedroogd
+  fruit (dadels, rozijnen, studentenhaver), 29 kant-en-klaarmaaltijden,
+  21 meal_components, 15 hartige spreads, 13 sauzen/dips, 9 groentechips,
+  5 wafels, 3 gazpacho, 2 tomatenblik. Regelfixes R53 (droogfruit
+  consolideert in nuts_seeds — precedent dadels 0077 en appel-/bananenchips
+  0082) en R54 (babyvoeding/-hapjes en leeftijdsaanduidingen zoals 4m+ /
+  12+ maanden -> baby_food_non_swap, vóór alle snackregels). Postflight:
+  touched=156, gap=0, total=15129, nonswap_ok=0.
+  VOLGENDE STAP batch 5 deel 4 (laatste): meal_components (570) +
+  ready_meals (103) + cooking_oils_fats (101).
