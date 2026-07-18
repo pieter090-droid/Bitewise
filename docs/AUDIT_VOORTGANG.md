@@ -45,8 +45,8 @@
 - [x] 3c: portie-bewust scoren (serving-data waar beide kanten die hebben)
 
 ## Fase 4 — Regressiescript
-- [ ] SQL-script met ~20 vaste testbarcodes, top-3 swaps per product
-- [ ] Nulmeting draaien en vastleggen
+- [x] Live Dart-regressietest met 20 vaste testbarcodes, top-3 swaps per product
+- [x] Nulmeting draaien en vastleggen
 
 ## Fase 5 — Nieuwe-scan-borging
 - [ ] 5a: trigger vult familie-default smaakprofielen bij nieuwe scans
@@ -448,3 +448,14 @@
   statisch serveren en navigeren via de hash-route (/#/product/<barcode>);
   in de release-build landen gesimuleerde toetsaanslagen niet in het
   zoekveld, dus de barcode moet via de URL.
+
+## Fase 4 — logboek
+- 2026-07-19: fase 4 uitgevoerd als `test/live_swap_regression_test.dart`.
+  Bewuste afwijking van het oorspronkelijke SQL-plan: kandidaatselectie loopt
+  via de echte `SnackSwapService` en rangschikking via de echte
+  `SwapScoreCalculator`; SQL alleen zou de Dart-score niet reproduceren.
+  De set bevat 20 vaste bronbarcodes uit 20 families en legt voor
+  `besteOverall` exact de actuele top-3-barcodes vast. Eerste live nulmeting:
+  20/20 groen. Zonder `LIVE_SUPABASE_ANON_KEY` wordt deze live test veilig
+  overgeslagen; de key wordt niet opgeslagen. Capture-modus
+  `CAPTURE_SWAP_BASELINE=1` print een bewust opnieuw te beoordelen nulmeting.
