@@ -34,8 +34,10 @@
   commit+push). Regex-wortels meteen meefixen in compute_swap_family().
 
 ## Fase 2 — Smaakprofiel-defaults per familie
-- [ ] Profieltabel opstellen (alleen ondubbelzinnige families)
-- [ ] Migratie: NULL-velden vullen, AI-waarden nooit overschrijven
+- [x] Profieltabel opstellen (alleen ondubbelzinnige families)
+      -> public.swap_family_profile_defaults, 48 families (migratie 0099)
+- [x] Migratie: NULL-velden vullen, AI-waarden nooit overschrijven
+      (migratie 0099, ai_overwritten=0)
 
 ## Fase 3 — Model-vangrails (app, 3 losse commits)
 - [ ] 3a: hartig-vs-zoet-blokkade in "Andere opties"
@@ -363,3 +365,29 @@
   splitsingen opgelost (B'tween candy-vs-granenreep, "broodje" kaal-vs-
   belegd, droogfruit, plantaardig-vs-zuivel, NL kuipsalade-vs-maaltijd).
   VOLGENDE STAP: fase 2 — smaakprofiel-defaults per ondubbelzinnige familie.
+
+## Fase 2 — logboek
+- 2026-07-18: migratie 0099. Uitgangspunt: 6.814 producten zonder
+  is_sweet/is_salty/is_crunchy en ~6.9k met lege taste_/texture_profile en
+  use_moment — precies de producten die nooit door AI-verrijking zijn
+  gegaan. Voor het scoremodel betekent zo'n NULL "neutraal 50", dus die
+  producten kregen willekeurige swaps.
+  Aanpak: defaultprofiel per familie, maar ALLEEN waar het profiel
+  ondubbelzinnig uit de familie volgt. Gemengde families krijgen bewust
+  GEEN default (sauces_dips, bread_bakery, ready_meals, meal_components,
+  supplements_powders, grain_starch_ingredients, alle *_non_swap): NULL is
+  daar eerlijker dan een gok. Ook binnen een familie kan één veld NULL
+  blijven als juist dat veld ambigu is — nuts_seeds en butter_margarine
+  krijgen geen is_salty (gezouten én ongezouten), popcorn geen is_sweet/
+  is_salty (zoet én zout), nut_butters/yoghurt/plantaardig/dairy_drinks
+  geen is_sweet (gezoet én ongezoet), hot_beverages geen smaak-default
+  (koffie, thee en chocolademelk door elkaar).
+  48 families in de tabel. Gevulde gaten: is_sweet 6814 -> 4922, is_salty
+  6814 -> 5228, is_crunchy 6814 -> 5172, taste 6932 -> 5520, texture
+  6850 -> 5080, use_moment 6818 -> 4711. Wat overblijft zijn de bewust
+  overgeslagen families plus de 3.623 rijen zonder swap_family.
+  CONTROLE: ai_overwritten=0 — geen enkele bestaande waarde is aangeraakt,
+  er is uitsluitend in NULL/lege velden geschreven. Postflight == dry-run.
+  De defaults staan persistent in public.swap_family_profile_defaults, zodat
+  fase 5a (trigger voor nieuwe scans) en fase 6 (documentatie) dezelfde bron
+  gebruiken in plaats van een kopie van de lijst.
