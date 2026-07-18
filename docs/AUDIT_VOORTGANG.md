@@ -277,3 +277,21 @@
   sandwiches_wraps, breakfast_cereals, granola_muesli, cereal_bars,
   protein_bars, supplements_powders, fresh_fruit, fresh_vegetables,
   ready_meals, meal_components, cooking_oils_fats + alle non-swap families.
+- 2026-07-16 (vervolg): batch 5 gestart (3019 producten, in 4 delen).
+  Deel 1: leesronde breakfast_cereals (150) + granola_muesli (174) +
+  cereal_bars (119) + protein_bars (93) + supplements_powders (170) klaar;
+  deze families zijn grotendeels bestemming van eerdere correcties en dus
+  schoon. Migratie 0095: 28 correcties. CONSISTENTIEFIX: Hero B'tween stond
+  gesplitst over chocolate_bars (via R9 uit 0079) en cereal_bars; B'tween is
+  een granenreep, geen candy bar -> alles naar cereal_bars, merk uit R9
+  (R47). Dit corrigeert een eerdere eigen beoordeling. Verder 5 mueslibrood/
+  -bollen -> bread, mueslikoeken -> cookies, 6 muesli-/granolarepen ->
+  cereal_bars, 2 wafels -> crackers, schnitzel -> meal_components, zaden ->
+  nuts_seeds, 3 RTD-eiwitshakes -> dairy/plant, Huel-poeder + gummies ->
+  supplements, carobmeel -> baking, 2 review. Regelfixes R48 (granolaregel
+  sluit brood/bol/koek/reep uit; repen met spatie), R49 (VIJFDE dekkingslek:
+  havermout/havervlokken/brinta/ontbijtpap/porridge/oats classificeerden
+  niet; ook 'corn flakes' met spatie) en R50 (ZESDE dekkingslek: samengestelde
+  '-brood'-namen zoals mueslibrood/volkorenbrood matchten niet op
+  '\mbrood\M'). 8 unittests groen; postflight bevestigt btween_split=1.
+  VOLGENDE STAP batch 5 deel 2: bread_bakery (502+) + sandwiches_wraps (148).
