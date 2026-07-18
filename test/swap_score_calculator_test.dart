@@ -232,6 +232,73 @@ void main() {
       expect(result.excludedReason, isNot('sweet_savory_conflict'));
     });
 
+    test('Andere opties weigert één kleine voedingsverbetering', () {
+      final result = calculator.scoreCrossForm(
+        source: crossFamilySpread('source', kcal: 500, sugar: 30, protein: 8),
+        candidate: crossFamilySpread(
+          'candidate',
+          family: 'nut_butters',
+          kcal: 500,
+          sugar: 28,
+          protein: 8,
+        ),
+        goal: SwapGoal.minderSuiker,
+      );
+
+      expect(result.isExcluded, isTrue);
+      expect(result.excludedReason, 'insufficient_cross_family_improvement');
+    });
+
+    test('Andere opties accepteert verbetering op twee voedingsassen', () {
+      final result = calculator.scoreCrossForm(
+        source: crossFamilySpread('source', kcal: 500, sugar: 30, protein: 8),
+        candidate: crossFamilySpread(
+          'candidate',
+          family: 'nut_butters',
+          kcal: 430,
+          sugar: 24,
+          protein: 8,
+        ),
+        goal: SwapGoal.besteOverall,
+      );
+
+      expect(result.isExcluded, isFalse);
+    });
+
+    test('Andere opties weigert forse winst met duidelijke verslechtering',
+        () {
+      final result = calculator.scoreCrossForm(
+        source: crossFamilySpread('source', kcal: 500, sugar: 30, protein: 8),
+        candidate: crossFamilySpread(
+          'candidate',
+          family: 'nut_butters',
+          kcal: 350,
+          sugar: 40,
+          protein: 8,
+        ),
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.isExcluded, isTrue);
+      expect(result.excludedReason, 'insufficient_cross_family_improvement');
+    });
+
+    test('Andere opties accepteert forse winst zonder verslechtering', () {
+      final result = calculator.scoreCrossForm(
+        source: crossFamilySpread('source', kcal: 500, sugar: 30, protein: 8),
+        candidate: crossFamilySpread(
+          'candidate',
+          family: 'nut_butters',
+          kcal: 350,
+          sugar: 30,
+          protein: 8,
+        ),
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.isExcluded, isFalse);
+    });
+
     test('Nutella naar water mag niet', () {
       final result = calculator.score(
         source: spread('nutella'),
@@ -497,6 +564,32 @@ SwapCandidate spread(
   salt: salt,
   saturatedFat: saturatedFat,
   nova: nova,
+);
+
+SwapCandidate crossFamilySpread(
+  String barcode, {
+  String family = 'chocolate_spreads',
+  double? kcal,
+  double? sugar,
+  double? protein,
+}) => product(
+  barcode,
+  family: family,
+  cluster: 'beleg',
+  snackType: 'spread',
+  form: 'spread',
+  mode: 'spread_on_bread',
+  taste: const ['creamy'],
+  texture: const ['creamy'],
+  moment: const ['breakfast'],
+  kcal: kcal,
+  sugar: sugar,
+  protein: protein,
+  fiber: 4,
+  fat: 20,
+  carbs: 25,
+  salt: .2,
+  saturatedFat: 5,
 );
 
 SwapCandidate iceCream(

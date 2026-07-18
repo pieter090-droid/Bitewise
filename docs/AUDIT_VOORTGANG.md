@@ -41,7 +41,7 @@
 
 ## Fase 3 — Model-vangrails (app, 3 losse commits)
 - [x] 3a: hartig-vs-zoet-blokkade in "Andere opties"
-- [ ] 3b: strengere cross-family-poort (>=2 assen of 1 fors zonder verslechtering)
+- [x] 3b: strengere cross-family-poort (>=2 assen of 1 fors zonder verslechtering)
 - [ ] 3c: portie-bewust scoren (serving-data waar beide kanten die hebben)
 
 ## Fase 4 — Regressiescript
@@ -398,3 +398,8 @@
   `sweet_savory_conflict`. Ontbrekende profielwaarden blijven permissief:
   NULL betekent onbekend en leidt niet tot een gok. Twee regressietests
   toegevoegd; volledige SwapScore-testset: 22/22 groen.
+- 2026-07-19: stap 3b afgerond. Cross-family kandidaten vereisen nu twee
+  voedingsassen met minimaal 10% verbetering, of één forse verbetering van
+  minimaal 25% zonder een bekende as meer dan 10% te verslechteren.
+  Ontbrekende waarden tellen niet als winst of verlies. Vier poorttests
+  toegevoegd; volledige SwapScore-testset: 26/26 groen.

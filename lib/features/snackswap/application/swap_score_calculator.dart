@@ -40,6 +40,9 @@ class SwapScoreCalculator {
     if (_hasSweetSavoryConflict(source.features, candidate.features)) {
       return _excluded(candidate, 'sweet_savory_conflict');
     }
+    if (!_passesCrossFamilyNutritionGate(source, candidate)) {
+      return _excluded(candidate, 'insufficient_cross_family_improvement');
+    }
     return score(
       source: source,
       candidate: candidate,
@@ -136,6 +139,48 @@ class SwapScoreCalculator {
     final candidateSavory =
         candidate.isSalty == true && candidate.isSweet != true;
     return (sourceSweet && candidateSavory) || (sourceSavory && candidateSweet);
+  }
+
+  /// Cross-family suggesties vereisen twee verbeterde voedingsassen (>=10%)
+  /// of één forse verbetering (>=25%) zonder een bekende as >10% te
+  /// verslechteren. Ontbrekende waarden tellen niet mee.
+  static bool _passesCrossFamilyNutritionGate(
+    SwapCandidate source,
+    SwapCandidate candidate,
+  ) {
+    final changes = <double>[
+      _relativeAxisChange(source.kcal100, candidate.kcal100),
+      _relativeAxisChange(source.sugar100, candidate.sugar100),
+      _relativeAxisChange(source.salt100, candidate.salt100),
+      _relativeAxisChange(
+        source.saturatedFat100,
+        candidate.saturatedFat100,
+      ),
+      _relativeAxisChange(
+        source.protein100,
+        candidate.protein100,
+        higherIsBetter: true,
+      ),
+      _relativeAxisChange(
+        source.fiber100,
+        candidate.fiber100,
+        higherIsBetter: true,
+      ),
+    ].where((change) => change.isFinite).toList();
+
+    if (changes.where((change) => change >= 10).length >= 2) return true;
+    return changes.any((change) => change >= 25) &&
+        !changes.any((change) => change < -10);
+  }
+
+  static double _relativeAxisChange(
+    double? source,
+    double? candidate, {
+    bool higherIsBetter = false,
+  }) {
+    if (source == null || candidate == null) return double.nan;
+    final raw = higherIsBetter ? candidate - source : source - candidate;
+    return raw / math.max(source.abs(), 1) * 100;
   }
 
   static double _goalMatchScore(
