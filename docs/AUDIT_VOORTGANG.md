@@ -410,3 +410,41 @@
   neutraal; portie- en 100g-waarden worden nooit in dezelfde score gemengd.
   Twee portieregressietests toegevoegd; volledige SwapScore-testset: 28/28
   groen.
+
+## Fase 3 — logboek
+- 2026-07-19: fase 3 door Codex geleverd in drie commits (73022b2 3a,
+  7261c16 3b, 468cae8 3c). Afwijking van het plan: 3a en 3b zitten in
+  swap_score_calculator.dart in plaats van rule_based_swap_provider.dart.
+  Dat is netter — scoreCrossForm() past beide poorten toe en de provider
+  filtert op isExcluded, dus de vangrails gelden ook als er later een
+  tweede aanroeper bijkomt. De oude _hasAnyNutritionImprovement in de
+  provider is nu een overbodige voorfilter (strikt zwakker dan de nieuwe
+  poort), maar schaadt niet.
+- 2026-07-19: EERSTE END-TO-END TEST OP LIVE DATA (stond sinds het begin
+  open als taak #10 en was nooit gedaan). App lokaal gedraaid tegen de live
+  database, vier producten door de hele keten. Bevestigd werkend: Magnum ->
+  waterijsjes/lage-kcal ijs, "Andere opties" alleen zoete zuiveldesserts met
+  >=2 verbeterde assen; Filet americain -> uitsluitend vleeswaren; Broodje
+  kaas -> alleen echt belegde sandwiches (R51 houdt stand); portiewaarden
+  worden getoond waar beide kanten portiedata hebben (3c).
+  GEVONDEN FOUT: onder doel "Minder kcal" toonde Filet americain (193
+  kcal/100g) een Jamon serrano van 324 kcal met de tekst "Past beter bij
+  minder kcal". Oorzaak: de nutritie-poort van 3b gold alleen voor
+  cross-family suggesties; binnen dezelfde familie was er geen
+  richtingscontrole, en doelmatch weegt maar 30% mee. Gefixt in 391008b:
+  _movesAwayFromGoal() sluit kandidaten uit die op de doelas verslechteren,
+  en de doelbelofte in de tekst wordt getoetst aan de werkelijke waarden in
+  plaats van aan de reason-codes (die hebben een drempel van >60 op 0-100,
+  waardoor zelfs een halvering van de calorieën soms afgezwakt werd).
+  8 regressietests toegevoegd met de echte cijfers uit de database.
+  41 tests groen, analyze onveranderd, opnieuw geverifieerd in de app.
+  KLEINERE OBSERVATIES (niet gefixt, geen blokkade): portie-eenheden
+  wisselen per kaart in dezelfde lijst (/100g naast /portie) omdat 3c per
+  paar beslist — klopt volgens de regel maar vergelijkt visueel lastig; en
+  de onboarding reset bij herladen in web.
+  TOOLING: de dev-server (flutter run -d web-server) faalt in deze omgeving
+  met een dwds-deserialisatiefout in de injected client.js, waardoor de app
+  blank blijft. Werkwijze die wel werkt: flutter build web --release,
+  statisch serveren en navigeren via de hash-route (/#/product/<barcode>);
+  in de release-build landen gesimuleerde toetsaanslagen niet in het
+  zoekveld, dus de barcode moet via de URL.
