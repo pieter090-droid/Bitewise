@@ -28,6 +28,9 @@ class SwapScoreCalculator {
     if (!_isEligibleCandidate(source, candidate)) {
       return _excluded(candidate, 'candidate_not_eligible');
     }
+    if (_movesAwayFromGoal(source, candidate, goal)) {
+      return _excluded(candidate, 'wrong_direction_for_goal');
+    }
     return _calculate(source, candidate, goal, dayContext);
   }
 
@@ -100,7 +103,8 @@ class SwapScoreCalculator {
     );
 
     final reasons = _reasonCodes(source, candidate, goal, usesServingData);
-    final reason = _userReason(goal, reasons);
+    final reason =
+        _userReasonFor(source, candidate, goal, reasons, usesServingData);
     return SwapScoreResult(
       candidate: candidate,
       score: score,
@@ -141,6 +145,41 @@ class SwapScoreCalculator {
     final candidateSavory =
         candidate.isSalty == true && candidate.isSweet != true;
     return (sourceSweet && candidateSavory) || (sourceSavory && candidateSweet);
+  }
+
+  /// Een gekozen doel heeft een richting. Een kandidaat die op precies die
+  /// as de VERKEERDE kant op gaat hoort er niet bij, ook niet als hij op
+  /// andere assen wint -- anders belooft de app "minder kcal" en toont hij
+  /// een product met meer kcal (gevonden bij Filet americain -> Jamon
+  /// serrano: 193 -> 324 kcal/100g). Ontbrekende waarden sluiten niets uit;
+  /// gelijk blijven mag, want dan wint de kandidaat elders. `besteOverall`
+  /// heeft geen richting en wordt niet gefilterd.
+  static bool _movesAwayFromGoal(
+    SwapCandidate source,
+    SwapCandidate candidate,
+    SwapGoal goal,
+  ) {
+    final serving = _canUseServingData(source, candidate);
+    final (double? from, double? to, bool lowerIsBetter) = switch (goal) {
+      SwapGoal.minderKcal => (
+          _kcal(source, serving),
+          _kcal(candidate, serving),
+          true
+        ),
+      SwapGoal.minderSuiker => (
+          _sugar(source, serving),
+          _sugar(candidate, serving),
+          true
+        ),
+      SwapGoal.meerEiwit => (
+          _protein(source, serving),
+          _protein(candidate, serving),
+          false
+        ),
+      SwapGoal.besteOverall => (null, null, true),
+    };
+    if (from == null || to == null) return false;
+    return lowerIsBetter ? to > from : to < from;
   }
 
   /// Cross-family suggesties vereisen twee verbeterde voedingsassen (>=10%)
@@ -535,6 +574,72 @@ class SwapScoreCalculator {
       serving ? null : candidate.fat100;
   static double? _carbs(SwapCandidate candidate, bool serving) =>
       serving ? null : candidate.carbs100;
+
+  /// De doelbelofte mag alleen worden uitgesproken als de kandidaat op de
+  /// doelas ook echt wint. Dat toetsen we aan de werkelijke waarden, niet
+  /// aan de reason-codes: die hebben een drempel van >60 op een 0-100
+  /// schaal, dus een halvering van de calorieën haalt hem soms niet en dan
+  /// zou de tekst onterecht afzwakken. Wint de kandidaat alleen elders, dan
+  /// benoemen we dát in plaats van het doel te beloven.
+  static String _userReasonFor(
+    SwapCandidate source,
+    SwapCandidate candidate,
+    SwapGoal goal,
+    List<String> codes,
+    bool usesServingData,
+  ) {
+    if (!_improvesGoalAxis(source, candidate, goal, usesServingData)) {
+      return switch (codes.firstWhere(
+        (c) => c != goal.value,
+        orElse: () => '',
+      )) {
+        'fewer_kcal' => 'Scheelt calorieën en blijft vergelijkbaar genoeg '
+            'met het originele product.',
+        'less_sugar' => 'Scheelt suiker en blijft vergelijkbaar genoeg met '
+            'het originele product.',
+        'more_protein' => 'Levert meer eiwit en blijft vergelijkbaar genoeg '
+            'met het originele product.',
+        'more_fiber' => 'Levert meer vezels en blijft vergelijkbaar genoeg '
+            'met het originele product.',
+        'less_processed' => 'Is minder bewerkt en blijft vergelijkbaar '
+            'genoeg met het originele product.',
+        _ => 'Een vergelijkbaar alternatief voor dit product.',
+      };
+    }
+    return _userReason(goal, codes);
+  }
+
+  /// Wint de kandidaat iets op precies de as van het gekozen doel?
+  /// Ontbrekende waarden gelden als "niet aantoonbaar beter".
+  static bool _improvesGoalAxis(
+    SwapCandidate source,
+    SwapCandidate candidate,
+    SwapGoal goal,
+    bool serving,
+  ) {
+    final (double? from, double? to, bool lowerIsBetter) = switch (goal) {
+      SwapGoal.minderKcal => (
+          _kcal(source, serving),
+          _kcal(candidate, serving),
+          true
+        ),
+      SwapGoal.minderSuiker => (
+          _sugar(source, serving),
+          _sugar(candidate, serving),
+          true
+        ),
+      SwapGoal.meerEiwit => (
+          _protein(source, serving),
+          _protein(candidate, serving),
+          false
+        ),
+      // Beste overall belooft geen enkele as, dus altijd toegestaan.
+      SwapGoal.besteOverall => (null, null, true),
+    };
+    if (goal == SwapGoal.besteOverall) return true;
+    if (from == null || to == null) return false;
+    return lowerIsBetter ? to < from : to > from;
+  }
 
   static String _userReason(SwapGoal goal, List<String> codes) {
     final base = switch (goal) {

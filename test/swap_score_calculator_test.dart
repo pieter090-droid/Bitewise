@@ -166,6 +166,130 @@ void main() {
   });
 
   group('rare swaps', () {
+    // Gevonden bij de end-to-end test op live data: doel 'Minder kcal' op
+    // Filet americain (193 kcal/100g) toonde Jamon serrano (324 kcal/100g)
+    // met de tekst 'Past beter bij minder kcal'.
+    test('doel Minder kcal weigert een kandidaat met meer kcal', () {
+      final source = spread('filet-americain', kcal: 193, sugar: 1, protein: 14);
+      final worse = spread('jamon-serrano', kcal: 324, sugar: 0.5, protein: 35);
+
+      final ranked = calculator.rankCandidates(
+        source: source,
+        candidates: [worse],
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(ranked, isEmpty);
+      expect(
+        calculator
+            .score(source: source, candidate: worse, goal: SwapGoal.minderKcal)
+            .excludedReason,
+        'wrong_direction_for_goal',
+      );
+    });
+
+    test('doel Minder suiker weigert een kandidaat met meer suiker', () {
+      final source = spread('bron', sugar: 20);
+      final worse = spread('zoeter', sugar: 40);
+
+      expect(
+        calculator.rankCandidates(
+          source: source,
+          candidates: [worse],
+          goal: SwapGoal.minderSuiker,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('doel Meer eiwit weigert een kandidaat met minder eiwit', () {
+      final source = spread('bron', protein: 20);
+      final worse = spread('minder-eiwit', protein: 8);
+
+      expect(
+        calculator.rankCandidates(
+          source: source,
+          candidates: [worse],
+          goal: SwapGoal.meerEiwit,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('gelijke doelas mag blijven, want de winst zit elders', () {
+      final source = spread('bron', kcal: 200, sugar: 30);
+      final gelijk = spread('gelijk-kcal', kcal: 200, sugar: 5);
+
+      expect(
+        calculator.rankCandidates(
+          source: source,
+          candidates: [gelijk],
+          goal: SwapGoal.minderKcal,
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('ontbrekende doelwaarde sluit niets uit', () {
+      final source = spread('bron', kcal: null);
+      final kandidaat = spread('kandidaat', kcal: 900);
+
+      expect(
+        calculator.rankCandidates(
+          source: source,
+          candidates: [kandidaat],
+          goal: SwapGoal.minderKcal,
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('beste overall kent geen richting en filtert dus niet', () {
+      final source = spread('bron', kcal: 100);
+      final kandidaat = spread('meer-kcal', kcal: 500, protein: 40, fiber: 12);
+
+      expect(
+        calculator.rankCandidates(
+          source: source,
+          candidates: [kandidaat],
+          goal: SwapGoal.besteOverall,
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('tekst belooft het doel niet als de doelwinst niet gemeten is', () {
+      final source = spread('bron', kcal: 300, sugar: 40, protein: 5);
+      // Gelijke kcal (dus niet uitgesloten), winst zit in suiker.
+      final kandidaat = spread('zelfde-kcal', kcal: 300, sugar: 2, protein: 5);
+
+      final result = calculator.score(
+        source: source,
+        candidate: kandidaat,
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.isExcluded, isFalse);
+      expect(result.userReason, isNot(contains('Past beter bij minder kcal')));
+      expect(result.userReason, contains('Scheelt suiker'));
+    });
+
+    test('echte kcal-winst onder de codedrempel behoudt de doelbelofte', () {
+      // 193 -> 103 kcal is een halvering, maar haalt de reason-code
+      // drempel (>60 op 0-100) niet. De tekst mag dan niet afzwakken.
+      final source = spread('filet-americain', kcal: 193, protein: 14);
+      final beter = spread('kipfilet', kcal: 103, protein: 16);
+
+      final result = calculator.score(
+        source: source,
+        candidate: beter,
+        goal: SwapGoal.minderKcal,
+      );
+
+      expect(result.isExcluded, isFalse);
+      expect(result.userReason, contains('Past beter bij minder kcal'));
+    });
+
     test('Andere opties blokkeert expliciete zoet-hartig botsing', () {
       final result = calculator.scoreCrossForm(
         source: spread('sweet-source'),
