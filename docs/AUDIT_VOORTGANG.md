@@ -23,10 +23,11 @@
       fruit_juices, hot_beverages, water, energy_drinks, sports_drinks,
       alcohol_drinks, smoothies, soups, sauces_dips, mayonnaise_sauces
       (migraties 0091-0094, 317 correcties, regelwortels R30-R46)
-- [ ] Batch 5: maaltijd/vers/rest — bread_bakery, sandwiches_wraps,
+- [x] Batch 5: maaltijd/vers/rest — bread_bakery, sandwiches_wraps,
       breakfast_cereals, granola_muesli, cereal_bars, protein_bars,
       supplements_powders, fresh_fruit, fresh_vegetables, ready_meals,
       meal_components, cooking_oils_fats + alle non-swap families
+      (migraties 0095-0098, 651 correcties, regelwortels R47-R57)
 - Werkwijze per batch: dump alle producten -> 3 checks (naam-splits,
   rauw-signalen, kcal/suiker-uitschieters) -> handmatige leesronde ->
   correctie-migratie (barcode-verankerd, snapshot, dry-run, postflight,
@@ -327,3 +328,38 @@
   touched=156, gap=0, total=15129, nonswap_ok=0.
   VOLGENDE STAP batch 5 deel 4 (laatste): meal_components (570) +
   ready_meals (103) + cooking_oils_fats (101).
+- 2026-07-18: deel 4 (LAATSTE) klaar — meal_components (570) + ready_meals
+  (103) + cooking_oils_fats (101). Migratie 0098: 270 correcties.
+  STRUCTURELE BEVINDING: de catch-all `p1 = composite or naam ~ maaltijd|
+  salade|meal` sleepte alles met "salade" in de naam naar meal_components.
+  In het NL is een "salade" in een kuipje (eiersalade, tonijnsalade,
+  huzarensalade, kip-kerriesalade, filet americain) echter smeerbaar
+  BROODBELEG — wie eiersalade scande kreeg lasagne en nasi als swap. R55
+  splitst dit (51 producten -> savory_spreads), met maaltijdsalades en
+  salade bowls expliciet uitgezonderd. Tweede bevinding: de ready_meals-
+  regel kende alleen 'kant-en-klaar' en 'pizza', waardoor lasagne, nasi,
+  bami, ravioli, tortellini, quiche, gratin en stoommaaltijden bij de
+  losse maaltijdcomponenten bleven hangen -> R56 (139 producten). R57:
+  maaltijdvervangers (meal replacement bar/shake, Modifast, drinkmaaltijd)
+  vielen via '\mmeal\M' ook in meal_components -> supplements_powders.
+  Verder 14 soepen/bouillons, 12 verse groenten/kruiden, 7 vers fruit,
+  7 visconserven "in olijfolie" uit cooking_oils_fats (spiegelt R42/R45),
+  7 bakkerij (tortillawraps, pizzabodem/-deeg), 6 babyvoeding, 3 margarine,
+  2 bakmix (oliebollen), 2 granenrepen (merk 'Holie'), 1 nacho's, 1 chili-
+  olie-condiment, 8 supplementen, 10 te vage namen -> review_required.
+  15 unittests groen (o.a. Eiersalade -> savory_spreads, Maaltijdsalade ->
+  ready_meals, Verspakket Maaltijdsalade -> meal_components).
+  Postflight == dry-run: touched=270, gap=3623 (ongewijzigd t.o.v.
+  baseline; dit is de losstaande backlog nooit-geclassificeerde rijen),
+  total=15129, view_rows=15129, nonswap_ok=0. Familietellingen na afloop:
+  meal_components 352, ready_meals 271, cooking_oils_fats 85,
+  savory_spreads 141.
+
+  ### FASE 1 AFGEROND
+  Migraties 0074-0098 (25 stuks), ~2.020 datacorrecties, 57 regexwortels
+  (R1-R57) gefixt, 7 dekkingslekken gedicht (drinkmelk, samengestelde
+  sapnamen, bouillon, ketchup/pesto/mosterd c.s., havermout/porridge,
+  samengestelde '-brood'-namen, knäckebröd met umlauts) en 5 structurele
+  splitsingen opgelost (B'tween candy-vs-granenreep, "broodje" kaal-vs-
+  belegd, droogfruit, plantaardig-vs-zuivel, NL kuipsalade-vs-maaltijd).
+  VOLGENDE STAP: fase 2 — smaakprofiel-defaults per ondubbelzinnige familie.
