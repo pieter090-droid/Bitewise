@@ -76,9 +76,11 @@ class SwapScoreCalculator {
     SwapGoal goal,
     SwapDayContext dayContext,
   ) {
-    final goalMatch = _goalMatchScore(source, candidate, goal);
-    final nutrition = _nutritionImprovementScore(source, candidate);
-    final day = _dayContextScore(candidate, dayContext);
+    final usesServingData = _canUseServingData(source, candidate);
+    final goalMatch = _goalMatchScore(source, candidate, goal, usesServingData);
+    final nutrition =
+        _nutritionImprovementScore(source, candidate, usesServingData);
+    final day = _dayContextScore(candidate, dayContext, usesServingData);
     final similarity = similarityScore(source.features, candidate.features);
     if (similarity < 45) {
       return _excluded(candidate, 'insufficient_similarity');
@@ -97,7 +99,7 @@ class SwapScoreCalculator {
       100,
     );
 
-    final reasons = _reasonCodes(source, candidate, goal);
+    final reasons = _reasonCodes(source, candidate, goal, usesServingData);
     final reason = _userReason(goal, reasons);
     return SwapScoreResult(
       candidate: candidate,
@@ -111,7 +113,7 @@ class SwapScoreCalculator {
       reasons: [reason],
       reasonCodes: reasons,
       userReason: reason,
-      usesServingData: false,
+      usesServingData: usesServingData,
     );
   }
 
@@ -187,93 +189,170 @@ class SwapScoreCalculator {
     SwapCandidate source,
     SwapCandidate candidate,
     SwapGoal goal,
+    bool usesServingData,
   ) {
     return switch (goal) {
       SwapGoal.minderKcal => _weighted([
-        (_reduction(source.kcal100, candidate.kcal100), 70),
-        (
-          _average([
-            _gain(source.protein100, candidate.protein100),
-            _gain(source.fiber100, candidate.fiber100),
-          ]),
-          20,
-        ),
-        (
-          _average([
-            _reduction(source.sugar100, candidate.sugar100),
-            _reduction(source.fat100, candidate.fat100),
-          ]),
-          10,
-        ),
-      ]),
+          (
+            _reduction(_kcal(source, usesServingData),
+                _kcal(candidate, usesServingData)),
+            70
+          ),
+          (
+            _average([
+              _gain(_protein(source, usesServingData),
+                  _protein(candidate, usesServingData)),
+              _gain(_fiber(source, usesServingData),
+                  _fiber(candidate, usesServingData)),
+            ]),
+            20,
+          ),
+          (
+            _average([
+              _reduction(_sugar(source, usesServingData),
+                  _sugar(candidate, usesServingData)),
+              _reduction(_fat(source, usesServingData),
+                  _fat(candidate, usesServingData)),
+            ]),
+            10,
+          ),
+        ]),
       SwapGoal.minderSuiker => _weighted([
-        (_reduction(source.sugar100, candidate.sugar100), 75),
-        (_reduction(source.kcal100, candidate.kcal100), 15),
-        (
-          _average([
-            _gain(source.protein100, candidate.protein100),
-            _gain(source.fiber100, candidate.fiber100),
-          ]),
-          10,
-        ),
-      ]),
+          (
+            _reduction(_sugar(source, usesServingData),
+                _sugar(candidate, usesServingData)),
+            75
+          ),
+          (
+            _reduction(_kcal(source, usesServingData),
+                _kcal(candidate, usesServingData)),
+            15
+          ),
+          (
+            _average([
+              _gain(_protein(source, usesServingData),
+                  _protein(candidate, usesServingData)),
+              _gain(_fiber(source, usesServingData),
+                  _fiber(candidate, usesServingData)),
+            ]),
+            10,
+          ),
+        ]),
       SwapGoal.meerEiwit => _weighted([
-        (_gain(source.protein100, candidate.protein100), 75),
-        (
-          _average([
-            _notHigher(source.sugar100, candidate.sugar100),
-            _notHigher(source.saturatedFat100, candidate.saturatedFat100),
-            _notHigher(source.salt100, candidate.salt100),
-          ]),
-          15,
-        ),
-        (_kcalAcceptance(source.kcal100, candidate.kcal100), 10),
-      ]),
+          (
+            _gain(_protein(source, usesServingData),
+                _protein(candidate, usesServingData)),
+            75
+          ),
+          (
+            _average([
+              _notHigher(_sugar(source, usesServingData),
+                  _sugar(candidate, usesServingData)),
+              _notHigher(_saturatedFat(source, usesServingData),
+                  _saturatedFat(candidate, usesServingData)),
+              _notHigher(_salt(source, usesServingData),
+                  _salt(candidate, usesServingData)),
+            ]),
+            15,
+          ),
+          (
+            _kcalAcceptance(_kcal(source, usesServingData),
+                _kcal(candidate, usesServingData)),
+            10
+          ),
+        ]),
       SwapGoal.besteOverall => _weighted([
-        (_reduction(source.kcal100, candidate.kcal100), 20),
-        (_reduction(source.sugar100, candidate.sugar100), 20),
-        (_gain(source.protein100, candidate.protein100), 15),
-        (_gain(source.fiber100, candidate.fiber100), 15),
-        (
-          _average([
-            _reduction(source.salt100, candidate.salt100),
-            _reduction(source.saturatedFat100, candidate.saturatedFat100),
-          ]),
-          15,
-        ),
-        (
-          _average([
-            _nutriscoreImprovement(source, candidate),
-            _novaImprovement(source, candidate),
-          ]),
-          15,
-        ),
-      ]),
+          (
+            _reduction(_kcal(source, usesServingData),
+                _kcal(candidate, usesServingData)),
+            20
+          ),
+          (
+            _reduction(_sugar(source, usesServingData),
+                _sugar(candidate, usesServingData)),
+            20
+          ),
+          (
+            _gain(_protein(source, usesServingData),
+                _protein(candidate, usesServingData)),
+            15
+          ),
+          (
+            _gain(_fiber(source, usesServingData),
+                _fiber(candidate, usesServingData)),
+            15
+          ),
+          (
+            _average([
+              _reduction(_salt(source, usesServingData),
+                  _salt(candidate, usesServingData)),
+              _reduction(_saturatedFat(source, usesServingData),
+                  _saturatedFat(candidate, usesServingData)),
+            ]),
+            15,
+          ),
+          (
+            _average([
+              _nutriscoreImprovement(source, candidate),
+              _novaImprovement(source, candidate),
+            ]),
+            15,
+          ),
+        ]),
     };
   }
 
   static double _nutritionImprovementScore(
     SwapCandidate source,
     SwapCandidate candidate,
-  ) => _weighted([
-    (_reduction(source.kcal100, candidate.kcal100), 20),
-    (_reduction(source.sugar100, candidate.sugar100), 20),
-    (_gain(source.protein100, candidate.protein100), 15),
-    (_gain(source.fiber100, candidate.fiber100), 15),
-    (_reduction(source.salt100, candidate.salt100), 10),
-    (_reduction(source.saturatedFat100, candidate.saturatedFat100), 10),
-    (
-      _average([
-        _reduction(source.fat100, candidate.fat100),
-        _carbBalance(source.carbs100, candidate.carbs100),
-      ]),
-      10,
-    ),
-  ]);
+    bool usesServingData,
+  ) =>
+      _weighted([
+        (
+          _reduction(_kcal(source, usesServingData),
+              _kcal(candidate, usesServingData)),
+          20
+        ),
+        (
+          _reduction(_sugar(source, usesServingData),
+              _sugar(candidate, usesServingData)),
+          20
+        ),
+        (
+          _gain(_protein(source, usesServingData),
+              _protein(candidate, usesServingData)),
+          15
+        ),
+        (
+          _gain(_fiber(source, usesServingData),
+              _fiber(candidate, usesServingData)),
+          15
+        ),
+        (
+          _reduction(_salt(source, usesServingData),
+              _salt(candidate, usesServingData)),
+          10
+        ),
+        (
+          _reduction(_saturatedFat(source, usesServingData),
+              _saturatedFat(candidate, usesServingData)),
+          10
+        ),
+        (
+          _average([
+            _reduction(_fat(source, usesServingData),
+                _fat(candidate, usesServingData)),
+            _carbBalance(_carbs(source, usesServingData),
+                _carbs(candidate, usesServingData)),
+          ]),
+          10,
+        ),
+      ]);
 
   static double _dayContextScore(
     SwapCandidate candidate,
     SwapDayContext context,
+    bool usesServingData,
   ) {
     if (context.isEmpty) return 50;
     return _weighted([
@@ -281,7 +360,7 @@ class SwapScoreCalculator {
         _limitContextScore(
           used: context.dailyKcalUsed,
           goal: context.dailyKcalGoal,
-          candidateValue: candidate.kcal100,
+          candidateValue: _kcal(candidate, usesServingData),
           lowerIsBetterAtLimit: true,
           typicalHigh: 600,
         ),
@@ -291,7 +370,7 @@ class SwapScoreCalculator {
         _limitContextScore(
           used: context.dailySugarUsed,
           goal: context.dailySugarGoal,
-          candidateValue: candidate.sugar100,
+          candidateValue: _sugar(candidate, usesServingData),
           lowerIsBetterAtLimit: true,
           typicalHigh: 60,
         ),
@@ -301,7 +380,7 @@ class SwapScoreCalculator {
         _targetContextScore(
           used: context.dailyProteinUsed,
           goal: context.dailyProteinGoal,
-          candidateValue: candidate.protein100,
+          candidateValue: _protein(candidate, usesServingData),
           typicalHigh: 30,
         ),
         25,
@@ -310,7 +389,7 @@ class SwapScoreCalculator {
         _targetContextScore(
           used: context.dailyFiberUsed,
           goal: context.dailyFiberGoal,
-          candidateValue: candidate.fiber100,
+          candidateValue: _fiber(candidate, usesServingData),
           typicalHigh: 15,
         ),
         25,
@@ -353,49 +432,68 @@ class SwapScoreCalculator {
   static double _processingQualityScore(
     SwapCandidate source,
     SwapCandidate candidate,
-  ) => _weighted([
-    (_novaImprovement(source, candidate), 30),
-    (_nutriscoreImprovement(source, candidate), 25),
-    (
-      _average([
-        _reductionInt(source.additivesN, candidate.additivesN),
-        _reductionInt(_ingredientCount(source), _ingredientCount(candidate)),
-      ]),
-      20,
-    ),
-    (_boolPositive(candidate.features.isLessProcessed), 15),
-    (
-      _average([
-        _boolPenalty(candidate.features.hasSweeteners),
-        _boolPenalty(candidate.features.hasPalmOil),
-      ]),
-      10,
-    ),
-  ]);
+  ) =>
+      _weighted([
+        (_novaImprovement(source, candidate), 30),
+        (_nutriscoreImprovement(source, candidate), 25),
+        (
+          _average([
+            _reductionInt(source.additivesN, candidate.additivesN),
+            _reductionInt(
+                _ingredientCount(source), _ingredientCount(candidate)),
+          ]),
+          20,
+        ),
+        (_boolPositive(candidate.features.isLessProcessed), 15),
+        (
+          _average([
+            _boolPenalty(candidate.features.hasSweeteners),
+            _boolPenalty(candidate.features.hasPalmOil),
+          ]),
+          10,
+        ),
+      ]);
 
   static double _dataQualityScore(SwapCandidate candidate) => _weighted([
-    (_scoreField(candidate.features.dataQualityScore), 40),
-    (_scoreField(candidate.completeness), 30),
-    (_confidenceField(candidate.features.aiConfidence), 20),
-    (_statesTagsScore(candidate.statesTags), 10),
-  ]);
+        (_scoreField(candidate.features.dataQualityScore), 40),
+        (_scoreField(candidate.completeness), 30),
+        (_confidenceField(candidate.features.aiConfidence), 20),
+        (_statesTagsScore(candidate.statesTags), 10),
+      ]);
 
   static List<String> _reasonCodes(
     SwapCandidate source,
     SwapCandidate candidate,
     SwapGoal goal,
+    bool usesServingData,
   ) {
     final codes = <String>[];
-    if (_reduction(source.kcal100, candidate.kcal100) > 60) {
+    if (_reduction(
+          _kcal(source, usesServingData),
+          _kcal(candidate, usesServingData),
+        ) >
+        60) {
       codes.add('fewer_kcal');
     }
-    if (_reduction(source.sugar100, candidate.sugar100) > 60) {
+    if (_reduction(
+          _sugar(source, usesServingData),
+          _sugar(candidate, usesServingData),
+        ) >
+        60) {
       codes.add('less_sugar');
     }
-    if (_gain(source.protein100, candidate.protein100) > 60) {
+    if (_gain(
+          _protein(source, usesServingData),
+          _protein(candidate, usesServingData),
+        ) >
+        60) {
       codes.add('more_protein');
     }
-    if (_gain(source.fiber100, candidate.fiber100) > 60) {
+    if (_gain(
+          _fiber(source, usesServingData),
+          _fiber(candidate, usesServingData),
+        ) >
+        60) {
       codes.add('more_fiber');
     }
     if (_novaImprovement(source, candidate) > 60) {
@@ -404,6 +502,39 @@ class SwapScoreCalculator {
     if (codes.isEmpty) codes.add(goal.value);
     return codes;
   }
+
+  static bool _canUseServingData(
+    SwapCandidate source,
+    SwapCandidate candidate,
+  ) =>
+      _hasComparableServing(source) && _hasComparableServing(candidate);
+
+  static bool _hasComparableServing(SwapCandidate candidate) =>
+      candidate.servingQuantity != null &&
+      candidate.servingQuantity! > 0 &&
+      candidate.kcalServing != null &&
+      candidate.sugarServing != null &&
+      candidate.proteinServing != null;
+
+  static double? _kcal(SwapCandidate candidate, bool serving) =>
+      serving ? candidate.kcalServing : candidate.kcal100;
+  static double? _sugar(SwapCandidate candidate, bool serving) =>
+      serving ? candidate.sugarServing : candidate.sugar100;
+  static double? _protein(SwapCandidate candidate, bool serving) =>
+      serving ? candidate.proteinServing : candidate.protein100;
+  static double? _fiber(SwapCandidate candidate, bool serving) =>
+      serving ? candidate.fiberServing : candidate.fiber100;
+  static double? _salt(SwapCandidate candidate, bool serving) =>
+      serving ? candidate.saltServing : candidate.salt100;
+  static double? _saturatedFat(SwapCandidate candidate, bool serving) =>
+      serving ? candidate.saturatedFatServing : candidate.saturatedFat100;
+
+  // Er bestaan geen betrouwbare portievelden voor vet en koolhydraten. Laat
+  // die assen neutraal meetellen in plaats van portie- en 100g-data te mengen.
+  static double? _fat(SwapCandidate candidate, bool serving) =>
+      serving ? null : candidate.fat100;
+  static double? _carbs(SwapCandidate candidate, bool serving) =>
+      serving ? null : candidate.carbs100;
 
   static String _userReason(SwapGoal goal, List<String> codes) {
     final base = switch (goal) {
@@ -426,9 +557,8 @@ class SwapScoreCalculator {
       return 50;
     }
     final pressure = _clamp(used / goal, 0, 1);
-    final valueScore = lowerIsBetterAtLimit
-        ? 100 - _scale(candidateValue, typicalHigh)
-        : 50;
+    final valueScore =
+        lowerIsBetterAtLimit ? 100 - _scale(candidateValue, typicalHigh) : 50;
     return 50 * (1 - pressure) + valueScore * pressure;
   }
 
@@ -456,30 +586,33 @@ class SwapScoreCalculator {
     return text.split(',').where((part) => part.trim().isNotEmpty).length;
   }
 
-  static double _gain(double? source, double? candidate) =>
-      source == null || candidate == null
+  static double _gain(double? source, double? candidate) => source == null ||
+          candidate == null
       ? 50
       : _clamp((candidate - source) / math.max(source.abs(), 1) * 100, 0, 100);
 
   static double _reduction(double? source, double? candidate) =>
       source == null || candidate == null
-      ? 50
-      : _clamp((source - candidate) / math.max(source.abs(), 1) * 100, 0, 100);
+          ? 50
+          : _clamp(
+              (source - candidate) / math.max(source.abs(), 1) * 100, 0, 100);
 
-  static double _reductionInt(int? source, int? candidate) =>
-      source == null || candidate == null
+  static double _reductionInt(int? source, int? candidate) => source == null ||
+          candidate == null
       ? 50
       : _clamp((source - candidate) / math.max(source.abs(), 1) * 100, 0, 100);
 
   static double _notHigher(double? source, double? candidate) =>
       source == null || candidate == null
-      ? 50
-      : _clamp(
-          100 -
-              math.max(0, candidate - source) / math.max(source.abs(), 1) * 100,
-          0,
-          100,
-        );
+          ? 50
+          : _clamp(
+              100 -
+                  math.max(0, candidate - source) /
+                      math.max(source.abs(), 1) *
+                      100,
+              0,
+              100,
+            );
 
   static double _kcalAcceptance(double? source, double? candidate) {
     if (source == null || candidate == null) return 50;
@@ -493,17 +626,21 @@ class SwapScoreCalculator {
 
   static double _carbBalance(double? source, double? candidate) =>
       source == null || candidate == null
-      ? 50
-      : _clamp(
-          100 - ((candidate - source).abs() / math.max(source.abs(), 1) * 100),
-          0,
-          100,
-        );
+          ? 50
+          : _clamp(
+              100 -
+                  ((candidate - source).abs() /
+                      math.max(source.abs(), 1) *
+                      100),
+              0,
+              100,
+            );
 
   static double _novaImprovement(
     SwapCandidate source,
     SwapCandidate candidate,
-  ) => _reductionInt(source.novaGroup, candidate.novaGroup);
+  ) =>
+      _reductionInt(source.novaGroup, candidate.novaGroup);
 
   static double _nutriscoreImprovement(
     SwapCandidate source,
@@ -511,8 +648,7 @@ class SwapScoreCalculator {
   ) {
     final sourceScore =
         source.nutriscoreScore ?? _nutriscoreGradeValue(source.nutriscoreGrade);
-    final candidateScore =
-        candidate.nutriscoreScore ??
+    final candidateScore = candidate.nutriscoreScore ??
         _nutriscoreGradeValue(candidate.nutriscoreGrade);
     return _reduction(sourceScore, candidateScore);
   }

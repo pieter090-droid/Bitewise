@@ -42,7 +42,7 @@
 ## Fase 3 — Model-vangrails (app, 3 losse commits)
 - [x] 3a: hartig-vs-zoet-blokkade in "Andere opties"
 - [x] 3b: strengere cross-family-poort (>=2 assen of 1 fors zonder verslechtering)
-- [ ] 3c: portie-bewust scoren (serving-data waar beide kanten die hebben)
+- [x] 3c: portie-bewust scoren (serving-data waar beide kanten die hebben)
 
 ## Fase 4 — Regressiescript
 - [ ] SQL-script met ~20 vaste testbarcodes, top-3 swaps per product
@@ -403,3 +403,10 @@
   minimaal 25% zonder een bekende as meer dan 10% te verslechteren.
   Ontbrekende waarden tellen niet als winst of verlies. Vier poorttests
   toegevoegd; volledige SwapScore-testset: 26/26 groen.
+- 2026-07-19: stap 3c afgerond. Het scoremodel gebruikt portiewaarden alleen
+  wanneer bron en kandidaat allebei een geldige portiegrootte plus kcal,
+  suiker en eiwit per portie hebben. Ontbreekt een kernwaarde, dan valt de
+  hele vergelijking terug op 100g. Niet-beschikbare portie-assen blijven
+  neutraal; portie- en 100g-waarden worden nooit in dezelfde score gemengd.
+  Twee portieregressietests toegevoegd; volledige SwapScore-testset: 28/28
+  groen.
