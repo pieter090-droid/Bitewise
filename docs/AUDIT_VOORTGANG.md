@@ -295,3 +295,20 @@
   '-brood'-namen zoals mueslibrood/volkorenbrood matchten niet op
   '\mbrood\M'). 8 unittests groen; postflight bevestigt btween_split=1.
   VOLGENDE STAP batch 5 deel 2: bread_bakery (502+) + sandwiches_wraps (148).
+- 2026-07-16 (vervolg): deel 2 klaar — bread_bakery (507) +
+  sandwiches_wraps (148). Dit legde het grootste structurele probleem van de
+  audit bloot: "broodje" betekent in het NL zowel een KAAL bread roll als een
+  BELEGD broodje, en de sandwich-regel matchte op 'broodje'. Daardoor stonden
+  ~100 kale broodjes (kaiser/hamburger/hotdog/pita/melk/desem), zoete
+  viennoiserie en hartige bakkerijsnacks bij de belegde sandwiches — wie een
+  hamburgerbroodje scande kreeg belegde sandwiches als swap. Migratie 0096:
+  197 correcties. Regelfix R51 (sandwiches_wraps vereist nu een BELEGD-
+  signaal: 'sandwich'/'wrap'/'belegd broodje'/'broodje <vulling>'), R51b
+  (broodregel vangt kale broodjes + tortilla/naan/pita) en R52 (ZEVENDE
+  dekkingslek: 66 crispbread-producten — knäckebröd stond in de regel alleen
+  zonder umlauts — plus melba toast, biscotte, Wasa, grissini, croutons,
+  soepstengels -> crackers_rice_cakes). Verder 6 paneermeel/bakmix ->
+  baking, 3 -> meal_components, vla, 2 kaasbolletjes, spreads/condimenten,
+  zalmplakken, 1 review. 11 unittests groen. Postflight: sandwiches_wraps
+  148 -> 33 (alleen nog echt belegd), bread_bakery 507 -> 535.
+  VOLGENDE STAP batch 5 deel 3: fresh_fruit (196+) + fresh_vegetables (693+).
