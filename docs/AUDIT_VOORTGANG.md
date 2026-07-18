@@ -19,9 +19,10 @@
       plant_based_dairy, savory_spreads, nut_butters, hummus_legume_spreads,
       butter_margarine
       (migraties 0086-0090, 214 correcties, regelwortels R19-R29)
-- [ ] Batch 4: dranken/overig — soft_drinks_regular, soft_drinks_light_zero,
+- [x] Batch 4: dranken/overig — soft_drinks_regular, soft_drinks_light_zero,
       fruit_juices, hot_beverages, water, energy_drinks, sports_drinks,
       alcohol_drinks, smoothies, soups, sauces_dips, mayonnaise_sauces
+      (migraties 0091-0094, 317 correcties, regelwortels R30-R46)
 - [ ] Batch 5: maaltijd/vers/rest — bread_bakery, sandwiches_wraps,
       breakfast_cereals, granola_muesli, cereal_bars, protein_bars,
       supplements_powders, fresh_fruit, fresh_vegetables, ready_meals,
@@ -258,3 +259,21 @@
   werd door geen regel geclassificeerd). 15 unittests groen.
   VOLGENDE STAP batch 4 deel 4 (slot): sauces_dips (668+) +
   mayonnaise_sauces (61).
+- 2026-07-16 (vervolg): deel 4 klaar — sauces_dips (678) +
+  mayonnaise_sauces (62). Migratie 0094: 99 correcties (30 blikbonen/vlees
+  "in tomatensaus" + verspakketten -> meal_components, 8 maaltijden ->
+  ready_meals, 7 vis in olie -> fish_seafood, 5 olijfolie ->
+  cooking_oils_fats, 16 smeerspreads -> savory_spreads, 4 hoemoes ->
+  hummus, 20 mayonaises -> mayonnaise_sauces, plus grissini/brood/
+  dessertsaus/beenham/chips en 2 review). Regelfixes R41 (mayonaise-regel),
+  R42 (sauzenregel-exclusies), R43 (hoemoes), R44 (Streich/bruschetta
+  spread), R45 (olijvenregel kaapte "huile d'olive" en "sardines a l'huile
+  d'olive") en R46 (VIERDE dekkingslek: ketchup/pesto/mosterd/sambal/ketjap/
+  azijn/passata/salsa/tapenade/guacamole/tzatziki classificeerden helemaal
+  niet). 19 unittests groen. Azijn, tomatenpuree en olijven blijven bewust
+  in sauces_dips (bewuste modelkeuze).
+  BATCH 4 (DRANKEN/OVERIG) COMPLEET: 0091-0094, 317 correcties, R30-R46.
+  VOLGENDE STAP: batch 5 (maaltijd/vers/rest) — bread_bakery,
+  sandwiches_wraps, breakfast_cereals, granola_muesli, cereal_bars,
+  protein_bars, supplements_powders, fresh_fruit, fresh_vegetables,
+  ready_meals, meal_components, cooking_oils_fats + alle non-swap families.
