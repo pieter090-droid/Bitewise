@@ -212,3 +212,17 @@
   soft_drinks_light_zero, fruit_juices, hot_beverages, water, energy_drinks,
   sports_drinks, alcohol_drinks, smoothies, soups, sauces_dips,
   mayonnaise_sauces: eerst omvang, dan leesrondes per familie.
+- 2026-07-16 (vervolg): batch 4 gestart (2119 producten, in 4 delen).
+  Deel 1: leesronde alcohol_drinks (77) + energy_drinks (28) +
+  sports_drinks (13) + smoothies (51) + water (76) + soft_drinks_light_zero
+  (60) klaar; de drankfamilies zelf zijn schoon. Migratie 0091: 15
+  correcties (5 producten die alleen "water" in de naam hadden: bonen ->
+  meal_components, sardines -> vis, tomatensoep -> soups, sate-mix ->
+  sauces, Oat&Go -> breakfast; 4 via alcoholwoord: 2 whisky-cocktailsaus +
+  mirin -> sauces, kookpudding rum -> dairy_desserts; 4 zero-energydrinks
+  -> energy_drinks; 2 "basis voor smoothie" -> fresh_fruit). Regelfixes R30
+  (alcoholregel sluit saus/pudding/mirin/kookwijn uit) en R31 (waterregel
+  sluit 'in water'/bonen/sardines/soep/'water toevoegen' uit); 10 unittests
+  groen. VOLGENDE STAP batch 4 deel 2: soft_drinks_regular (435) +
+  fruit_juices (160), incl. consistente behandeling van limonadeSIROOP-
+  concentraten (Karvan Cevitam/Raak, ook die in light_zero).
