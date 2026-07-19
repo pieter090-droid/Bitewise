@@ -205,12 +205,21 @@ final ruleBasedSwapProvider = FutureProvider.family<
     return const RuleBasedSwapNotFound();
   }
 
+  // Doel meegeven zodat de selectie ook kandidaten ophaalt die op de doelas
+  // winnen maar buiten de kwaliteitstop-40 vallen.
   final candidates = await service.getCandidatesForCluster(
     excludeBarcode: source.barcode,
     swapFamily: source.features.swapFamily,
     snackType: source.features.snackType,
     categoryCluster: source.features.categoryCluster,
     fallbackCategory: source.category,
+    goal: request.goal,
+    goalSourceValue: switch (request.goal) {
+      SwapGoal.minderKcal => source.kcal100,
+      SwapGoal.minderSuiker => source.sugar100,
+      SwapGoal.meerEiwit => source.protein100,
+      SwapGoal.besteOverall => null,
+    },
   );
   if (candidates.isEmpty) return const RuleBasedSwapNotFound();
 

@@ -4,6 +4,7 @@ import 'package:bitewise/core/constants/app_constants.dart';
 import 'package:bitewise/core/supabase/supabase_service.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/snack_product.dart';
+import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
 
 // --- Resultaattypes met duidelijke, aparte statussen ---
 
@@ -149,12 +150,63 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
   ///     niet AI-verrijkt is.
   static const _minAcceptableCandidates = 3;
 
+  /// Kolom in de resolved view waarop een doel wordt beoordeeld, plus de
+  /// richting. `besteOverall` heeft geen as en dus geen gerichte greep.
+  static (String column, bool lowerIsBetter)? _goalAxis(SwapGoal? goal) =>
+      switch (goal) {
+        SwapGoal.minderKcal => ('kcal_100g', true),
+        SwapGoal.minderSuiker => ('sugar_100g', true),
+        SwapGoal.meerEiwit => ('protein_100g', false),
+        SwapGoal.besteOverall || null => null,
+      };
+
+  /// Haalt kandidaten die op de DOELAS beter zijn dan het bronproduct, los
+  /// van hun data_quality_score.
+  ///
+  /// Zonder deze greep is de selectie doelblind: de pool is de top-40 op
+  /// datakwaliteit, en daar kan de hele goede kant van de familie buiten
+  /// vallen. Voor Volkoren peperkoek (5,0 g suiker) bevatte die pool geen
+  /// enkel koekje met minder suiker, terwijl de database er acht heeft --
+  /// suikervrije biscuits scoren nu eenmaal laag op volledigheid. Dat viel
+  /// niet op zolang de lijst werd gevuld met kandidaten die de verkeerde
+  /// kant op gingen; sinds de doelpoort die weigert, bleef er niets over.
+  Future<List<SwapCandidate>> _goalDirectedCandidates({
+    required String excludeBarcode,
+    required String swapFamily,
+    required SwapGoal goal,
+    required double sourceValue,
+    int limit = 20,
+  }) async {
+    final axis = _goalAxis(goal);
+    if (axis == null) return const [];
+    final (column, lowerIsBetter) = axis;
+    var query = _supabase.client
+        .from(_resolvedProductView)
+        .select(_resolvedProductColumns)
+        .eq('swap_family', swapFamily)
+        .eq('classification_status', 'classified')
+        .eq('is_swap_relevant', true)
+        .neq('barcode', excludeBarcode);
+    query = lowerIsBetter
+        ? query.lt(column, sourceValue)
+        : query.gt(column, sourceValue);
+    final rows =
+        await query.order(column, ascending: lowerIsBetter).limit(limit);
+    return (rows as List)
+        .map((r) =>
+            SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
+        .where(_isEligibleCandidate)
+        .toList();
+  }
+
   Future<List<SwapCandidate>> getCandidatesForCluster({
     required String excludeBarcode,
     String? swapFamily,
     String? snackType,
     String? categoryCluster,
     String? fallbackCategory,
+    SwapGoal? goal,
+    double? goalSourceValue,
     int limit = 40,
   }) async {
     if (!_supabase.isAvailable) return const [];
@@ -174,6 +226,23 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
                 (r as Map).cast<String, dynamic>()))
             .where(_isEligibleCandidate)
             .toList();
+
+        // Vul aan met kandidaten die op de doelas winnen maar buiten de
+        // kwaliteitstop-40 vielen. De scorer beslist daarna alsnog; dit
+        // verruimt alleen wat hij te zien krijgt.
+        if (goal != null && goalSourceValue != null) {
+          final directed = await _goalDirectedCandidates(
+            excludeBarcode: excludeBarcode,
+            swapFamily: swapFamily,
+            goal: goal,
+            sourceValue: goalSourceValue,
+          );
+          final seen = candidates.map((c) => c.barcode).toSet();
+          for (final c in directed) {
+            if (seen.add(c.barcode)) candidates.add(c);
+          }
+        }
+
         if (candidates.length >= _minAcceptableCandidates) return candidates;
       }
       if (snackType != null && snackType.isNotEmpty) {

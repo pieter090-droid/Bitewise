@@ -100,8 +100,12 @@ const _fixtures = <_Fixture>[
       'Non sparkling apple pear flavour',
       'soft_drinks_regular',
       ['8718907630634', '4260183211082', '8711399010021']),
+  // Herijkt na migratie 0100: twee 0-kcal frisdranken die ten onrechte in
+  // soft_drinks_regular stonden zijn naar light/zero verplaatst, waardoor
+  // deze familie andere kandidaten heeft. Alleen deze fixture verschoof;
+  // de overige negentien bleven identiek.
   _Fixture('8718907384773', 'AH ice tea zero', 'soft_drinks_light_zero',
-      ['8711327596696', '8718452538010', '8718452639564']),
+      ['8718452639564', '20442941', '8711327596641']),
   _Fixture('8718452275328', 'Groentensap spinazie avocado appel kokoswater',
       'fruit_juices', ['8718452646685', '20083076', '8718907924085']),
   _Fixture('9004380071507', 'Capuccino Coffee', 'hot_beverages',

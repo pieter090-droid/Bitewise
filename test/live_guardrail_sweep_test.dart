@@ -45,15 +45,24 @@ void main() {
         final source = await service.getCandidateByBarcode(barcode);
         if (source == null) continue;
 
-        final candidates = await service.getCandidatesForCluster(
-          excludeBarcode: source.barcode,
-          swapFamily: source.features.swapFamily,
-          snackType: source.features.snackType,
-          categoryCluster: source.features.categoryCluster,
-          fallbackCategory: source.category,
-        );
-
         for (final goal in SwapGoal.values) {
+          // Zelfde selectie als de app: doelbewust, zodat de sweep meet wat
+          // een gebruiker werkelijk krijgt.
+          final candidates = await service.getCandidatesForCluster(
+            excludeBarcode: source.barcode,
+            swapFamily: source.features.swapFamily,
+            snackType: source.features.snackType,
+            categoryCluster: source.features.categoryCluster,
+            fallbackCategory: source.category,
+            goal: goal,
+            goalSourceValue: switch (goal) {
+              SwapGoal.minderKcal => source.kcal100,
+              SwapGoal.minderSuiker => source.sugar100,
+              SwapGoal.meerEiwit => source.protein100,
+              SwapGoal.besteOverall => null,
+            },
+          );
+
           final ranked = calculator.rankCandidates(
             source: source,
             candidates: candidates,
@@ -144,19 +153,13 @@ void main() {
       print('paren gecontroleerd: $pairsChecked');
       // ignore: avoid_print
       print('per-portie beoordeeld: $servingPairs van $pairsChecked');
-      // Gerapporteerd, niet hard afgedwongen. Een lege lijst komt hier niet
-      // door de vangrail maar door de kandidaatSELECTIE: die pakt de top-40
-      // op data_quality_score en kijkt niet naar het doel. Voor koekjes zit
-      // er dan geen enkele kandidaat met minder suiker in de pool, terwijl
-      // de database er wel acht heeft. Eerder viel dat niet op omdat de
-      // lijst werd gevuld met kandidaten die de verkeerde kant op gingen.
-      // ignore: avoid_print
-      print('geen enkele swap over (selectieprobleem, geen vangrailfout): '
-          '${emptyResults.length}');
-      for (final line in emptyResults) {
-        // ignore: avoid_print
-        print('  $line');
-      }
+      // Sinds de selectie doelbewust aanvult (getCandidatesForCluster met
+      // goal) mag geen enkel product met ruimte om te verbeteren nog leeg
+      // uitkomen. Bronnen die al op 0 staan (water, zwarte koffie) tellen
+      // hier niet mee; daar is niets zinnigs te suggereren.
+      expect(emptyResults, isEmpty,
+          reason: 'geen enkele swap over terwijl er ruimte was:\n'
+              '${emptyResults.join('\n')}');
       expect(lookWrongPer100g, isEmpty,
           reason: 'swaps kloppen per portie maar niet per 100g:\n'
               '${lookWrongPer100g.join('\n')}');
