@@ -1,93 +1,205 @@
-# Bitewise SnackSwap — datamodel en swap-logica
+# Bitewise SnackSwap — datamodel, classificatie en scorelogica
 
-> Doel van dit document: een externe ontwikkelaar of reviewer kan hiermee de
-> volledige keten begrijpen — van rauwe productdata tot de swap-suggestie in
-> de app — zonder migratiebestanden te hoeven lezen. Bijgewerkt per fase van
-> het auditplan (zie docs/AUDIT_VOORTGANG.md).
+Dit document beschrijft de productieketen na migratie 0105. De uitvoerbare
+code en de database blijven de bron van waarheid; dit document legt uit hoe
+de onderdelen samenwerken en hoe wijzigingen gecontroleerd moeten worden.
 
-## 1. De keten in één oogopslag
+## 1. Keten van scan naar swaps
 
-```
-Open Food Facts ──(Edge Function: lookup-product)──> products  (RAW, wordt nooit gemuteerd door migraties)
-                                                        │ trigger: compute_product_features()
-                                                        ▼
-                                              product_features    (afgeleide velden + classificatie)
-                                                        │ view-join met swap_family_mapping
-                                                        ▼
-                                          product_features_resolved  (leeslaag voor de app)
-                                                        │
-                                     Flutter-app: SnackSwapService (kandidaten) +
-                                     SwapScoreCalculator (score) + provider (groepen)
-                                                        ▼
-                                              Swap-suggesties in de UI
+```text
+Open Food Facts
+  -> Edge Function lookup_product
+  -> products (raw brondata)
+  -> products_compute_features (classificatie voor werkelijk nieuwe rijen)
+  -> products_z_apply_new_scan_guardrails (profieldefaults + voedingsconflicten)
+  -> product_features (vastgelegde classificatie en afgeleide kenmerken)
+  -> product_features_resolved (join met swap_family_mapping)
+  -> SnackSwapService (doelbewuste kandidaatselectie)
+  -> SwapScoreCalculator (uitsluiten, scoren, rangschikken)
+  -> RuleBasedSwapProvider (Directe swaps en Andere opties)
+  -> Flutter-UI
 ```
 
-Kernprincipes:
-- `products` is de onbewerkte bron (Open Food Facts) en blijft raw.
-- Classificatie gebeurt op één plek: `compute_swap_family()` (PL/pgSQL,
-  first-match-wins regelketen), plus handmatig geauditeerde per-product
-  correcties. De tabel `swap_family_rules` documenteert de regels.
-- `swap_family_mapping` is het familiemodel: per familie de modelvelden
-  (cluster, snack_type, vorm, eetwijze), verwante families en of de familie
-  swap-relevant is.
-- `is_swap_relevant` wordt in de view berekend: alleen `classified`-producten
-  in een swap-relevante familie doen mee als swap-kandidaat.
+`products` blijft raw: auditmigraties corrigeren uitsluitend afgeleide data in
+`product_features`. Een herscan of OFF-sync mag een handmatig beoordeelde rij
+niet opnieuw classificeren. Migraties 0102 en 0103 borgen dat
+`swap_family`, relevantiestatus, modelvelden en bewuste uitsluitingen een
+aanraking van `products` overleven.
 
-## 2. Het familiemodel
+## 2. Classificatie: runtime en manifest
 
-*(Wordt aangevuld in fase 6: volledige familietabel met betekenis,
-swap-relevantie en verwantschappen.)*
+`public.compute_swap_family(name, category, categories_tags, pnns1, pnns2,
+brand)` is de uitvoerbare bron van waarheid. Het is een PL/pgSQL-keten met
+first-match-wins-semantiek. De actuele definitie komt uit migratie 0098 en
+heeft 76 geordende branches. De historische labels R1–R57 benoemen
+auditfixes; zij zijn niet hetzelfde als het aantal runtimebranches.
 
-- ~50 swap-relevante families (chocolate_bars, crisps_chips, yoghurt_skyr_quark, ...)
-- ~10 bewust niet-swap-relevante families (raw_meat, raw_eggs_non_swap,
-  baby_food_non_swap, dairy_cooking_cream_non_swap, ...): het product is
-  "verklaard" maar wordt nooit als snackswap voorgesteld.
-- `related_families` stuurt de "Andere opties"-groep in de app
-  (bv. ijs -> zuiveltoetjes).
+`public.swap_family_rules` is vanaf migraties 0104/0105 een reproduceerbaar
+manifest van die functie:
 
-## 3. Hoe een product zijn classificatie krijgt (herkomst-legenda)
+- één actieve rij per runtimebranch;
+- `branch_order` 1–76 is de werkelijke evaluatievolgorde;
+- `condition_sql` bevat de exacte PL/pgSQL-conditie;
+- `source_function_hash` koppelt alle rijen aan één functiedefinitie;
+- `classification_status` volgt `is_swap_relevant_default` van de familie;
+- oude handmatige subsetregels blijven alleen inactief bestaan vanwege
+  historische `matched_rule_id`-verwijzingen.
 
-Elk product draagt `classification_reason`. Betekenis van de patronen:
+Na iedere wijziging aan `compute_swap_family()` moet
+`refresh_swap_family_rule_manifest()` worden aangepast als het verwachte
+branchaantal wijzigt, en daarna worden uitgevoerd. Een onvolledig manifest
+faalt transactioneel.
 
-| Patroon | Betekenis | Betrouwbaarheid |
-|---|---|---|
-| `live_trigger_compute_swap_family` | Automatisch bij scan, via de regelketen | regel-niveau (0.70) |
-| `legacy_existing_valid_family_status_backfill` | Bestond al vóór het auditplan; status-backfill | geauditeerd in fase 1 |
-| `batch3a_brand_fallback` / `batch3b_...` / `batch4a_...` / `batch4b_...` | Regex/categorie-batches (migraties 0053-0056), dry-run-getest | 0.70 |
-| `batch5_promotion_r1: <motivering>` | Handmatige beoordeling per product (staging -> promotie, migratie 0070); motivering per product leesbaar | 0.5-0.85 per product |
-| `correction_00XX: <motivering>` | Barcode-verankerde correctie met bewijs (migraties 0071+) | hoog |
-| `review_required` + reden | Bewust onbeslist: naam geeft onvoldoende signaal; NOOIT gegokt | n.v.t. (geen swap-kandidaat) |
+## 3. Familiemodel
 
-Audit-trail: elke migratie heeft een `_snapshot_00XX_before`-tabel (exacte
-rollback mogelijk) en staat genummerd in git (`supabase/migrations/`).
+`swap_family_mapping` bevat 62 families: 50 swap-relevant en 12 bewust niet
+swap-relevant. De tabel bepaalt cluster, producttype, vorm, consumptiewijze,
+verwante families en de standaardrelevantie.
 
-## 4. Het scoremodel in de app
+Swap-relevante families per cluster:
 
-Bestand: `lib/features/snackswap/application/swap_score_calculator.dart`.
+- Zoet: `breakfast_cereals`, `cakes_pastries`, `candy_sweets`,
+  `cereal_bars`, `chocolate_bars`, `chocolate_confectionery`,
+  `chocolate_spreads`, `cookies_biscuits`, `granola_muesli`,
+  `honey_syrups`, `jams_fruit_spreads`, `sweet_spreads_other`.
+- Hartig: `butter_margarine`, `cold_cuts`, `crackers_rice_cakes`,
+  `crisps_chips`, `fried_snacks`, `hummus_legume_spreads`,
+  `mayonnaise_sauces`, `meat_snacks`, `nuts_seeds`, `popcorn`,
+  `sauces_dips`, `savory_spreads`.
+- Zuivel: `cheese_snacks`, `dairy_desserts`, `dairy_drinks`,
+  `ice_cream_desserts`, `plant_based_dairy`, `yoghurt_skyr_quark`.
+- Drank: `alcohol_drinks`, `energy_drinks`, `fruit_juices`,
+  `hot_beverages`, `smoothies`, `soft_drinks_light_zero`,
+  `soft_drinks_regular`, `sports_drinks`, `water`.
+- Fruit/groente: `fresh_fruit`, `fresh_vegetables`.
+- Maaltijd: `bread_bakery`, `meal_components`, `ready_meals`,
+  `sandwiches_wraps`, `soups`.
+- Overig: `cooking_oils_fats`, `protein_bars`, `supplements_powders`.
 
-- Kandidaatselectie (`SnackSwapService.getCandidatesForCluster`): zelfde
-  `swap_family` (top-40 op datakwaliteit); pas als dat <3 oplevert bredere
-  lagen (snack_type -> category_cluster -> kale categorie).
-- Score = doel-match 30% + voedingsverbetering 25% + dagcontext 15% +
-  gelijkenis 15% + bewerkingsgraad 10% + datakwaliteit 5%.
-- Gelijkenis < 45 = kandidaat uitgesloten.
-- "Andere opties": kandidaten uit `related_families`, zelfde
-  vorm/eetwijze, met aantoonbare voedingsverbetering.
-- *(Fase 3 voegt toe: hartig-vs-zoet-blokkade, strengere cross-family-poort,
-  portie-bewust scoren — wordt hier gedocumenteerd zodra live.)*
+Bewust niet swap-relevant:
 
-## 5. Auditprotocol (de vaste drie checks)
+`baby_food_non_swap`, `baking_ingredients_non_swap`,
+`dairy_cooking_cream_non_swap`, `fats_oils_non_swap`, `fish_seafood`,
+`grain_starch_ingredients`, `legumes_non_swap`,
+`meat_alternatives_non_swap`, `raw_eggs_non_swap`, `raw_meat`,
+`raw_poultry` en `unknown`.
 
-Bij elke wijziging aan classificaties, en periodiek over nieuwe scans:
-1. **Naam-splits**: (bijna) identieke productnamen verspreid over meerdere
-   families -> bijna altijd een fout.
-2. **Rauw-signalen**: woorden als rauw/braad/à griller in een
-   kant-en-klaar-familie -> bereidingsstatus-fout.
-3. **Uitschieters**: kcal/suiker ver buiten de familienorm -> vaak een
-   portie/garnering/kookingrediënt dat niet in de familie hoort.
+`related_families` stuurt de cross-family groep “Andere opties”. De volledige
+actuele relaties staan in `swap_family_mapping`; kopieer ze niet naar code of
+documentatie.
 
-Daarnaast per migratie: dry-run in teruggedraaide transactie vóór uitvoering,
-postflight-queries na uitvoering, rowcount- en products-onaangeroerd-checks.
+## 4. Herkomstlegenda
 
-*(Fase 4 voegt het regressiescript toe; fase 5 het intake-script voor nieuwe
-scans — beide komen in de repo met verwijzing hier.)*
+`classification_reason` vertelt waarom de vastgelegde classificatie bestaat.
+
+| Patroon | Herkomst en betekenis |
+|---|---|
+| `live_trigger_compute_swap_family` | Nieuwe scan, automatisch door de runtimeketen; regelconfidence 0,70. |
+| `live_trigger_nutrition_guardrail:*` | Fase 5 heeft een nutritioneel conflict veilig opgelost, bijvoorbeeld zero-frisdrank of bronwater. |
+| `live_trigger_nutrition_conflict:*` | Naam, familie en voeding spreken elkaar tegen of bewijs ontbreekt; status wordt `review_required`. |
+| `legacy_existing_valid_family_status_backfill` | Bestaande familie uit vóór de audit, later van status voorzien. |
+| `batch1_*` t/m `batch5_*` | Regel-/stagingbatches 0051–0070; reden vermeldt batch of individuele motivering. |
+| `batch5_promotion_r1:*` | Handmatig beoordeelde stagingpromotie met motivering per product. |
+| `correction_00XX:*` | Barcode-verankerde correctie van een concrete fout. |
+| `audit1_00XX:*` | Fase-1-familieaudit; bevat doorgaans productgroep, besluit en historische R-regel. |
+| `audit1_0102:*` | Tegenstrijdige eerdere beslissingen; bewust naar review gezet. |
+| `review_required` | Status, geen redenpatroon: product doet niet mee totdat een mens het conflict beslecht. |
+| NULL | Nooit beoordeeld of nog door geen regel gedekt; niet stilzwijgend interpreteren als “goed”. |
+
+`classification_status` is beslissend: alleen `classified` kan in de resolved
+view swap-relevant worden. `review_required` en bewuste uitsluitingen worden
+niet als kandidaat getoond. `matched_rule_id` kan bij oude tabelgestuurde
+classificaties gevuld zijn; runtimeclassificaties gebruiken de functie en
+hebben daarom doorgaans geen betrouwbare losse rule-id.
+
+## 5. Profieldefaults en nieuwe scans
+
+`swap_family_profile_defaults` bevat 48 ondubbelzinnige familieprofielen.
+Migratie 0099 vulde uitsluitend NULL/lege velden; AI-waarden zijn niet
+overschreven. Gemengde families en ambigue velden blijven bewust NULL.
+
+De tweede producttrigger uit 0101:
+
+1. leest rechtstreeks uit deze tabel;
+2. vult alleen nog lege smaak-, textuur- en momentvelden;
+3. gebruikt kcal, suiker en zoetstoffensignalen om nutritionele
+   familieconflicten af te vangen;
+4. kiest bij twijfel `review_required`;
+5. herclassificeert alleen rijen met live-triggerherkomst, nooit audit-/AI-
+   of handmatige beslissingen.
+
+## 6. Kandidaatselectie en scoring
+
+De app gebruikt geen SQL-score. `SnackSwapService` haalt kandidaten op en
+`SwapScoreCalculator` berekent de productiescore in Dart.
+
+Kandidaatselectie:
+
+- eerst dezelfde `swap_family`, daarna `snack_type`, `category_cluster` en
+  uiteindelijk kale categorie als fallback;
+- de pool begint met maximaal 40 hoogkwalitatieve kandidaten;
+- voor een gekozen doel wordt de pool aangevuld met aantoonbaar betere
+  kandidaten op kcal, suiker of eiwit, zodat datakwaliteit de doelas niet
+  blind maakt;
+- kandidaten moeten `classified` en resolved swap-relevant zijn.
+
+Score:
+
+- doelmatch 30%;
+- voedingsverbetering 25%;
+- dagcontext 15%;
+- gelijkenis 15%;
+- bewerkingskwaliteit 10%;
+- datakwaliteit 5%.
+
+Vangrails:
+
+- gelijkenis onder 45 sluit uit;
+- een kandidaat die op de gekozen doelas achteruitgaat wordt uitgesloten;
+- bij porties wordt de doelas zowel per portie als per 100 g gecontroleerd;
+- portiedata wordt alleen gebruikt wanneer beide kanten geldige
+  portiegrootte plus kcal/suiker/eiwit per portie hebben, anders valt de hele
+  vergelijking terug op 100 g;
+- zoet-hartigconflicten worden in “Andere opties” geblokkeerd;
+- cross-family vereist twee assen met minstens 10% winst, of één as met
+  minstens 25% winst zonder bekende verslechtering boven 10%;
+- reden- en doeltekst wordt alleen getoond als de beloofde as werkelijk wint.
+
+## 7. Controleprotocol
+
+Voor iedere classificatie- of triggerwijziging:
+
+1. snapshot vóór datamutaties;
+2. officiële `supabase db push --dry-run`;
+3. wijziging transactioneel pushen;
+4. `supabase/phase5_intake_check.sql` uitvoeren;
+5. `supabase/phase5_persistence_check.sql` uitvoeren;
+6. `supabase/phase6_documentation_check.sql` uitvoeren;
+7. live regressietests mét `LIVE_SUPABASE_ANON_KEY` draaien;
+8. `flutter analyze` en de gewone tests draaien;
+9. migratiehistorie, gitstatus en rowcounts controleren.
+
+De live tests slaan zichzelf zonder key over. Een groene standaardtest is dus
+geen bewijs dat live regressies zijn uitgevoerd.
+
+Belangrijkste tests:
+
+- `test/swap_score_calculator_test.dart`: lokale score- en vangrailtests;
+- `test/live_swap_regression_test.dart`: exacte top-3 voor 20 vaste
+  bronbarcodes;
+- `test/live_guardrail_sweep_test.dart`: eigenschappen over alle vier doelen;
+- `CAPTURE_SWAP_BASELINE=1`: print een nieuwe top-3-baseline, maar herijken
+  vereist altijd menselijke beoordeling.
+
+## 8. Wijzigingsregels
+
+- Voeg een classificatieregel toe in `compute_swap_family()`, nooit alleen in
+  het manifest.
+- Plaats specifieke uitzonderingen vóór brede regels: first-match wins.
+- Synchroniseer daarna het manifest en pas de 76-branch-assertie bewust aan.
+- Wijzig familieprofielen in `swap_family_profile_defaults`, niet in een
+  gekopieerde lijst.
+- Laat twijfel op `review_required`; een lege waarde is eerlijker dan gokken.
+- Mutaties aan `products` voor auditcorrecties zijn verboden: het blijft raw.
+- Behandel verschuiving van een live baseline als onderzoekssignaal, niet als
+  reden om automatisch de verwachte uitkomst te overschrijven.

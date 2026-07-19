@@ -54,9 +54,9 @@
 
 ## Fase 6 — Documentatie (loopt parallel mee)
 - [x] Skelet docs/SWAP_LOGIC.md
-- [ ] swap_family_rules-tabel synchroniseren met werkelijke functie
-- [ ] Herkomst-legenda compleet
-- [ ] Eindredactie na fase 5
+- [x] swap_family_rules-tabel synchroniseren met werkelijke functie
+- [x] Herkomst-legenda compleet
+- [x] Eindredactie na fase 5
 
 ## Logboek
 - 2026-07-14: plan gestart. Takenlijst #11-#16 aangemaakt. Skelet documenten.
@@ -528,6 +528,29 @@
   “Cola regular” blijft bewust `review_required` (0100). Beide verplichte
   live tests na 5a groen: exacte top-3 en vier-doelen-sweep, 387 paren waarvan
   67 op portiebasis.
+
+## Fase 6 — logboek
+- 2026-07-19: `docs/SWAP_LOGIC.md` volledig herschreven naar de productiestand
+  na 0103: keten, 62 families (50 relevant/12 niet relevant), volledige
+  herkomstlegenda, profieldefaults, doelbewuste kandidaatselectie,
+  portiesemantiek, scoregewichten, vangrails en controleprotocol.
+- Migratie 0104 maakte `swap_family_rules` een automatisch runtime-manifest.
+  De eerste postflight ving direct een parserafwijking: PostgreSQL vouwde de
+  niet-gretige regex tot één branch samen. De classificatiefunctie en data
+  waren niet geraakt. Migratie 0105 verving de parser door branchesplitsing
+  en eist transactioneel exact 76 branches. Definitieve live postflight:
+  branch_order 1–76, 76 unieke orders, één functiehash, nul lege condities of
+  onbekende families.
+- `supabase/phase6_documentation_check.sql` bewaakt voortaan branchaantal,
+  aaneengesloten volgorde, functiehash, familie-/relevantieconsistentie en
+  verweesde profieldefaults. De historische R1–R57 zijn auditfixlabels; de
+  76 manifestregels zijn de actuele uitvoerbare first-match-branches.
+- Eindcontrole: 76 actieve regels, 76 unieke orders, één functiehash,
+  0 inhouds-/relevantiemismatches, 0 verweesde defaults, 62 families en 48
+  familieprofielen. Volledige Flutter-testset 43/43 groen, inclusief beide
+  live tests (387 paren; 67 portieparen). `flutter analyze` onveranderd op
+  acht reeds bestaande info-meldingen buiten SnackSwap; geen errors of
+  warnings uit fase 6.
 
 ## Fase 5 — controle en aanvulling (2026-07-19)
 - FASE 5 ZELF KLOPT. Elk pad van de 5a-trigger getest met echte inserts in
