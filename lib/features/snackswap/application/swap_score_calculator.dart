@@ -154,12 +154,31 @@ class SwapScoreCalculator {
   /// serrano: 193 -> 324 kcal/100g). Ontbrekende waarden sluiten niets uit;
   /// gelijk blijven mag, want dan wint de kandidaat elders. `besteOverall`
   /// heeft geen richting en wordt niet gefilterd.
+  /// De doelas moet op BEIDE grondslagen kloppen: per portie én per 100 g.
+  /// Anders vliegen er kandidaten door die alleen winnen omdat hun portie
+  /// groter is -- "meer eiwit" doordat je meer eet is geen zinnige swap, en
+  /// omgekeerd oogt een kandidaat met meer kcal/100 g tegenstrijdig naast de
+  /// waarden die het scherm toont.
   static bool _movesAwayFromGoal(
     SwapCandidate source,
     SwapCandidate candidate,
     SwapGoal goal,
   ) {
-    final serving = _canUseServingData(source, candidate);
+    if (goal == SwapGoal.besteOverall) return false;
+    if (_worseOnGoalAxis(source, candidate, goal, false)) return true;
+    if (_canUseServingData(source, candidate) &&
+        _worseOnGoalAxis(source, candidate, goal, true)) {
+      return true;
+    }
+    return false;
+  }
+
+  static bool _worseOnGoalAxis(
+    SwapCandidate source,
+    SwapCandidate candidate,
+    SwapGoal goal,
+    bool serving,
+  ) {
     final (double? from, double? to, bool lowerIsBetter) = switch (goal) {
       SwapGoal.minderKcal => (
           _kcal(source, serving),

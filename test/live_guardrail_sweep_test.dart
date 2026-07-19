@@ -37,6 +37,7 @@ void main() {
       final wrongDirection = <String>[];
       final falsePromise = <String>[];
       final lookWrongPer100g = <String>[];
+      final emptyResults = <String>[];
       var pairsChecked = 0;
       var servingPairs = 0;
 
@@ -58,6 +59,20 @@ void main() {
             candidates: candidates,
             goal: goal,
           );
+
+          // Leeg is alleen fout als er ruimte was om te verbeteren. Bij een
+          // bron van 0 kcal (water, zwarte koffie, en helaas ook wat colas
+          // met kcal=0 als "onbekend") kan niets lager, en is geen suggestie
+          // het juiste antwoord.
+          final axisValue = switch (goal) {
+            SwapGoal.minderKcal => source.kcal100,
+            SwapGoal.minderSuiker => source.sugar100,
+            SwapGoal.meerEiwit => null, // altijd ruimte omhoog
+            SwapGoal.besteOverall => null,
+          };
+          if (ranked.isEmpty && (axisValue == null || axisValue > 0)) {
+            emptyResults.add('${goal.value}: ${source.name}');
+          }
 
           for (final result in ranked.take(5)) {
             pairsChecked++;
@@ -94,9 +109,9 @@ void main() {
               );
             }
 
-            // Schaduwmeting: hoe ziet ditzelfde paar eruit voor een gebruiker
-            // die naar de 100g-waarden kijkt? Het model is intern consistent,
-            // maar de presentatie kan tegenstrijdig ogen.
+            // De doelas moet ook op 100g-basis kloppen. Anders wint een
+            // kandidaat alleen doordat zijn portie groter is, en oogt de
+            // suggestie tegenstrijdig naast de waarden op het scherm.
             if (s) servingPairs++;
             final (double? f100, double? t100) = switch (goal) {
               SwapGoal.minderKcal => (source.kcal100, c.kcal100),
@@ -129,12 +144,22 @@ void main() {
       print('paren gecontroleerd: $pairsChecked');
       // ignore: avoid_print
       print('per-portie beoordeeld: $servingPairs van $pairsChecked');
+      // Gerapporteerd, niet hard afgedwongen. Een lege lijst komt hier niet
+      // door de vangrail maar door de kandidaatSELECTIE: die pakt de top-40
+      // op data_quality_score en kijkt niet naar het doel. Voor koekjes zit
+      // er dan geen enkele kandidaat met minder suiker in de pool, terwijl
+      // de database er wel acht heeft. Eerder viel dat niet op omdat de
+      // lijst werd gevuld met kandidaten die de verkeerde kant op gingen.
       // ignore: avoid_print
-      print('OGENSCHIJNLIJK verkeerd op 100g-basis: ${lookWrongPer100g.length}');
-      for (final line in lookWrongPer100g.take(12)) {
+      print('geen enkele swap over (selectieprobleem, geen vangrailfout): '
+          '${emptyResults.length}');
+      for (final line in emptyResults) {
         // ignore: avoid_print
         print('  $line');
       }
+      expect(lookWrongPer100g, isEmpty,
+          reason: 'swaps kloppen per portie maar niet per 100g:\n'
+              '${lookWrongPer100g.join('\n')}');
       expect(wrongDirection, isEmpty,
           reason: 'swaps gaan de verkeerde kant op:\n'
               '${wrongDirection.join('\n')}');
