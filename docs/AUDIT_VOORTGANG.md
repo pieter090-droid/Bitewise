@@ -49,8 +49,8 @@
 - [x] Nulmeting draaien en vastleggen
 
 ## Fase 5 — Nieuwe-scan-borging
-- [ ] 5a: trigger vult familie-default smaakprofielen bij nieuwe scans
-- [ ] 5b: intake-controlescript over live_trigger-aanwas
+- [x] 5a: trigger vult familie-defaults en vangt voedingsconflicten af
+- [x] 5b: intake-controlescript over live_trigger-aanwas
 
 ## Fase 6 — Documentatie (loopt parallel mee)
 - [x] Skelet docs/SWAP_LOGIC.md
@@ -504,3 +504,27 @@
 - EINDSTAND: 43 tests groen (waarvan 2 live tegen de database), flutter
   analyze onveranderd op 8 pre-existing infos, en in de app geverifieerd op
   pindakaas, peperkoek, Filet americain en Magnum.
+
+## Fase 5 — logboek
+- 2026-07-19: migratie 0101 live. Een tweede producttrigger, bewust
+  alfabetisch na `products_compute_features`, vult voor nieuwe scans alleen
+  nog lege profielvelden uit `public.swap_family_profile_defaults`; er is
+  geen gekopieerde defaultlijst. Bestaande AI-/handmatige profielwaarden
+  worden niet overschreven. Dezelfde trigger gebruikt kcal, suiker en het
+  zoetstoffensignaal om een nutritioneel zero-profiel in
+  `soft_drinks_regular` veilig naar light/zero of water te zetten. Spreken
+  naam en voeding elkaar tegen, of ontbreekt voldoende bewijs, dan wordt het
+  `review_required`. Alleen rijen met herkomst
+  `live_trigger_compute_swap_family` mogen nutritioneel worden herzien.
+- Snapshot van de voorafgaande functie/triggerdefinitie staat in
+  `_snapshot_0101_trigger_before`. Officiële Supabase dry-run bevatte alleen
+  0101; push slaagde transactioneel en de migratiehistorie staat lokaal/live
+  gelijk t/m 0101. Live db-lint: alleen twee reeds bestaande waarschuwingen
+  in `calculate_swap_score`, geen 0101-probleem.
+- 5b staat in `supabase/phase5_intake_check.sql`: classified-zonder-familie,
+  non-swap-relevant, zero-profiel-in-regular en ontbrekende familie-defaults.
+  Eerste read-only postflight: 1 recente live-trigger-rij, 0 basisfouten,
+  0 ontbrekende defaults en 0 classified zero-regular-lekken. De bekende
+  “Cola regular” blijft bewust `review_required` (0100). Beide verplichte
+  live tests na 5a groen: exacte top-3 en vier-doelen-sweep, 387 paren waarvan
+  67 op portiebasis.
