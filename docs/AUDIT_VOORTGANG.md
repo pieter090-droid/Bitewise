@@ -528,3 +528,56 @@
   “Cola regular” blijft bewust `review_required` (0100). Beide verplichte
   live tests na 5a groen: exacte top-3 en vier-doelen-sweep, 387 paren waarvan
   67 op portiebasis.
+
+## Fase 5 — controle en aanvulling (2026-07-19)
+- FASE 5 ZELF KLOPT. Elk pad van de 5a-trigger getest met echte inserts in
+  een teruggedraaide transactie: 0 kcal + zoetstoffen -> light/zero; naam
+  "regular" bij zero-voeding -> review_required; ongezoet bronwater ->
+  water; geen bewijs van zoetstof -> review_required (conservatief, goed);
+  gewone cola van 42 kcal onaangeraakt; nieuwe chocoladereep krijgt
+  is_sweet=true en taste=[zoet] uit swap_family_profile_defaults.
+  Triggervolgorde klopt, mappingrijen bestaan, 5b geeft 0 rijen.
+- MAAR DAARBIJ DE GROOTSTE FOUT VAN HET HELE TRAJECT GEVONDEN, die niet uit
+  fase 5 kwam maar er al zat. Eén `update products set updated_at` op een
+  AI-verrijkt product, verder niets gewijzigd:
+      Melkchocolade (B'tween)
+      herkomst: correction_0073: melkchocolade is een chocoladereep
+      chocolate_bars  ->  cereal_bars
+  In compute_product_features() stond `swap_family = excluded.swap_family`
+  onvoorwaardelijk, terwijl de B1-bescherming alleen de classification_*
+  metadata dekte. De familie werd dus bij ELKE aanraking van een
+  products-rij herberekend en overschreven, met de oude herkomst er nog bij.
+  Een rij kon `audit1_0098: ...` als reden tonen terwijl hij ergens anders
+  in zat -- de provenance loog dan over de werkelijke familie, en dat is
+  precies het spoor waarop de hele audit gecontroleerd is.
+  OMVANG: 1369 producten zouden van familie wisselen bij een aanraking
+  (859 uit fase 1-auditmigraties, 145 uit correction_/batch-werk) en 1783
+  zouden op NULL komen. Samen ruim 3100 rijen, meer dan 20% van de database.
+  Eén OFF-sync had de helft van fase 1 stil teruggedraaid.
+- MIGRATIE 0102: swap_family, category_cluster, snack_type, product_form,
+  consumption_mode, secondary_consumption_modes, usage_context,
+  is_swap_relevant en swap_relevance_reason staan nu onder dezelfde
+  voorwaarde als classification_status -- alleen invullen bij een écht nieuw
+  product. Keuze: de audit wint, want die correcties zijn met de hand
+  beoordeeld en de regel is een generalisatie. Nieuwe scans veranderen niet.
+  Twee vervolgvondsten meegefixt: is_swap_relevant volgde uit de
+  HERBEREKENDE familie terwijl swap_family de bewaarde hield, waardoor 108
+  non_swap-rijen weer swap-relevant werden (B4); en `v_relevant` maakte elke
+  familie relevant, ook *_non_swap (B3, 539 rijen). B'tween Melkchocolade
+  gaat naar review_required: 0073 zei chocolade op de naam, 0095/R47 zei
+  granenreep op het merk -- twee eigen oordelen die elkaar tegenspreken.
+- MIGRATIE 0103: bewuste "buiten het swap-model"-beslissingen uit 0074
+  hadden swap_family EN classification_status op NULL, precies de combinatie
+  die de trigger als nieuw product leest. Van de 6 zulke rijen kregen er 4
+  alsnog een familie terug. 10 rijen (2 herkomsten) krijgen nu
+  review_required; de 2738 rijen zonder herkomst blijven onaangeroerd, want
+  die zijn nooit beoordeeld en horen wél door de regel te lopen.
+- NIEUW CONTROLESCRIPT: supabase/phase5_persistence_check.sql, read-only,
+  hoort nul rijen te geven. Draaien na elke wijziging aan
+  compute_product_features() of aan de classificatieregels, en na een grote
+  import.
+- EINDCONTROLE: alle 15.129 products-rijen aangeraakt in een teruggedraaide
+  transactie. swap_family verschoven: 0. is_swap_relevant verschoven: 0.
+  smaakprofiel overschreven: 0. non_swap weer relevant: 0. Bewust genulde
+  rijen die terugkwamen: 0. Beide controlescripts 0 rijen, 43 app-tests
+  groen, flutter analyze onveranderd.
