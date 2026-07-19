@@ -459,3 +459,48 @@
   20/20 groen. Zonder `LIVE_SUPABASE_ANON_KEY` wordt deze live test veilig
   overgeslagen; de key wordt niet opgeslagen. Capture-modus
   `CAPTURE_SWAP_BASELINE=1` print een bewust opnieuw te beoordelen nulmeting.
+
+## Volledige controle fase 1 t/m 4 (2026-07-19)
+- FASE 1 en 2 nagemeten op de live database: 0 classified zonder familie,
+  0 non-swap met is_swap_relevant, rowcounts 15129 gelijk over products /
+  product_features / resolved view, en de vijf structurele splitsingen
+  houden stand. Vier schijnbare terugvallen bleken vals alarm van de
+  zoekpatronen zelf (rozijnenbrood en chocorozijnen horen niet bij
+  nuts_seeds; "Egg & Cheese Muffin" is echt belegd; "Vega filet americain"
+  staat in meat_alternatives_non_swap). Fase 2: 48 families, nul velden
+  waar een default bestaat maar nog NULL is, nul AI-waarden overschreven.
+  De 31 popcorn-producten met is_sweet zijn allemaal AI-verrijkt.
+- FASE 3 breed geverifieerd met een nieuwe sweep over ALLE VIER de doelen
+  (test/live_guardrail_sweep_test.dart). De nulmeting van fase 4 dekt
+  alleen besteOverall; de fout die eerder gevonden werd zat juist in
+  minderKcal en zou daar niet uit zijn gekomen. De sweep toetst geen exacte
+  uitkomsten maar eigenschappen: geen swap gaat de verkeerde kant op de
+  doelas, en de doelbelofte in de tekst wordt alleen gedaan als die as ook
+  echt wint.
+- DAARBIJ TWEE ECHTE FOUTEN GEVONDEN EN GEFIXT:
+  1. (1ee3b11) De portie-bewuste scoring uit 3c liet kandidaten door die
+     alleen wonnen doordat hun portie groter is -- pindakaas met 31 g eiwit
+     die "meer eiwit" beloofde met een kandidaat van 23,4 g. De doelas wordt
+     nu op beide grondslagen getoetst, portie én 100 g. 36 tegenstrijdige
+     paren verdwenen.
+  2. (9527cc5) De kandidaatselectie was doelblind: top-40 op
+     data_quality_score. Voor peperkoek bevatte die pool geen enkel koekje
+     met minder suiker terwijl de database er acht heeft. Sinds fix 1 de
+     verkeerde kandidaten weigert, bleef daar niets over. De selectie vult
+     de pool nu aan met kandidaten die op de doelas beter zijn dan de bron.
+     Lege combinaties: 3 -> 0.
+- MIGRATIE 0100: vier frisdranken met 0 kcal in soft_drinks_regular. Alle
+  vier hebben zoetstoffen en (vrijwel) geen suiker, dus het zijn light/zero
+  dranken. 2 -> soft_drinks_light_zero, 1 -> water (Spa Finesse), en
+  "Cola regular" -> review_required omdat naam en voeding elkaar
+  tegenspreken; dat is geen keuze om te gokken. Postflight == dry-run.
+  GEEN REGELWORTEL MOGELIJK: compute_swap_family() krijgt geen
+  voedingswaarden mee, dus deze fout is niet op de naam te zien. Structureel
+  hoort dit in de trigger die de waarden wél kent -> meenemen in fase 5a.
+- De fase 4-nulmeting is op één fixture herijkt (AH ice tea zero): migratie
+  0100 voegde twee producten aan soft_drinks_light_zero toe, waardoor die
+  familie andere kandidaten heeft. De overige negentien fixtures bleven
+  identiek, wat bevestigt dat de wijziging beperkt bleef.
+- EINDSTAND: 43 tests groen (waarvan 2 live tegen de database), flutter
+  analyze onveranderd op 8 pre-existing infos, en in de app geverifieerd op
+  pindakaas, peperkoek, Filet americain en Magnum.
