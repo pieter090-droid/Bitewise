@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bitewise/core/preferences/preferences_service.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/snackswap/application/rule_based_swap_provider.dart';
+import 'package:bitewise/features/snackswap/application/swap_log_portion.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
 import 'package:bitewise/features/sync/application/sync_coordinator.dart';
@@ -72,19 +73,22 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     ref.read(preferencesServiceProvider).setSnackSwapUseDayContext(value);
   }
 
-  /// Logt een gekozen swap direct in het daglog (per 100g-waarden, zelfde
-  /// eenvoudige semantiek als voorheen: 1 regel, geen gramgewicht-schaling).
-  Future<void> _logSwap(SwapCandidate item) async {
+  /// Logt een gekozen swap direct in het daglog met één consistente
+  /// voedingsgrondslag: betrouwbare portiedata, anders exact 100 gram.
+  Future<void> _logSwap(SwapScoreResult result) async {
+    final item = result.candidate;
+    final portion = swapLogPortionFor(result);
     final meal = MealType.suggestForNow();
     await ref.read(dayLogsRepositoryProvider).logEntry(
+          barcode: item.barcode,
           productName: item.name,
           mealType: meal,
-          grams: 0,
-          kcal: item.kcal100 ?? 0,
-          protein: item.protein100 ?? 0,
-          sugar: item.sugar100 ?? 0,
-          carbs: item.carbs100 ?? 0,
-          fat: item.fat100 ?? 0,
+          grams: portion.grams,
+          kcal: portion.kcal,
+          protein: portion.protein,
+          sugar: portion.sugar,
+          carbs: portion.carbs,
+          fat: portion.fat,
         );
     ref.read(syncCoordinatorProvider).onLogsChanged();
     if (!mounted) return;
@@ -343,7 +347,7 @@ class _DayContextToggle extends StatelessWidget {
 class _GroupSection extends StatelessWidget {
   const _GroupSection({required this.group, required this.onLog});
   final SwapRecommendationGroup group;
-  final void Function(SwapCandidate item) onLog;
+  final void Function(SwapScoreResult result) onLog;
 
   @override
   Widget build(BuildContext context) {
@@ -359,7 +363,7 @@ class _GroupSection extends StatelessWidget {
                   color: AppColors.navy)),
           const SizedBox(height: 10),
           for (final result in group.results)
-            _SwapCard(result: result, onLog: () => onLog(result.candidate)),
+            _SwapCard(result: result, onLog: () => onLog(result)),
         ],
       ),
     );
@@ -412,13 +416,6 @@ class _SwapCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(result.userReason ?? result.reasons.join(' · '),
                 style: const TextStyle(color: AppColors.ink, height: 1.35)),
-            if (result.reasonCodes.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(result.reasonCodes.join(' · '),
-                    style:
-                        const TextStyle(color: AppColors.slate, fontSize: 11)),
-              ),
           ],
           if (_hasNutrition) ...[
             const SizedBox(height: 12),
@@ -507,7 +504,7 @@ class _ScoreBadge extends StatelessWidget {
         color: AppColors.gold.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text('score ${score.round()}',
+      child: Text('Match ${score.round()}',
           style: const TextStyle(
               color: AppColors.navy,
               fontWeight: FontWeight.w800,

@@ -33,7 +33,9 @@ class SettingsScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
             ),
-            error: (e, _) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('$e'))),
+            error: (e, _) => Card(
+                child: Padding(
+                    padding: const EdgeInsets.all(16), child: Text('$e'))),
             data: (goal) => _GoalCard(
               goal: goal ?? UserGoal.defaultsFor(GoalType.maintain),
               onEdit: () => _editGoal(context, ref,
@@ -50,7 +52,7 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: const Text(
                       'Je logs blijven lokaal totdat je dit aanzet.'),
                   value: syncEnabled,
-                  activeColor: AppColors.gold,
+                  activeThumbColor: AppColors.gold,
                   onChanged: (v) => _toggleSync(context, ref, v),
                 ),
                 const Divider(height: 1),
@@ -58,7 +60,7 @@ class SettingsScreen extends ConsumerWidget {
                   title: const Text('Anonieme statistieken'),
                   subtitle: const Text('Help Bitewise verbeteren.'),
                   value: prefs.analyticsEnabled,
-                  activeColor: AppColors.gold,
+                  activeThumbColor: AppColors.gold,
                   onChanged: (v) async {
                     await settings.setAnalyticsEnabled(v);
                     ref.invalidate(preferencesServiceProvider);
@@ -86,7 +88,8 @@ class SettingsScreen extends ConsumerWidget {
                       const Icon(Icons.restart_alt, color: AppColors.danger),
                   title: const Text('App resetten',
                       style: TextStyle(color: AppColors.danger)),
-                  subtitle: const Text('Wist alles en start onboarding opnieuw.'),
+                  subtitle:
+                      const Text('Wist alles en start onboarding opnieuw.'),
                   onTap: () => _confirmReset(context, ref),
                 ),
               ],
@@ -126,7 +129,8 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _editGoal(BuildContext context, WidgetRef ref, UserGoal goal) async {
+  Future<void> _editGoal(
+      BuildContext context, WidgetRef ref, UserGoal goal) async {
     final updated = await showModalBottomSheet<UserGoal>(
       context: context,
       isScrollControlled: true,
@@ -235,7 +239,9 @@ class _GoalCard extends StatelessWidget {
                 runSpacing: 6,
                 children: [
                   for (final p in goal.preferences)
-                    Chip(label: Text(p.label), visualDensity: VisualDensity.compact),
+                    Chip(
+                        label: Text(p.label),
+                        visualDensity: VisualDensity.compact),
                   for (final a in goal.allergies)
                     Chip(
                       label: Text('⚠ ${a.label}'),
@@ -267,7 +273,8 @@ class _Metric extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: AppColors.navy)),
-          Text(label, style: const TextStyle(color: AppColors.slate, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(color: AppColors.slate, fontSize: 12)),
         ],
       ),
     );
