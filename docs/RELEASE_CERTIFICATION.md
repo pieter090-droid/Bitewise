@@ -15,14 +15,14 @@ de hele catalogus.
 | Producten zonder status | 0 | 0 |
 | Classified zonder familie | 0 | 0 |
 | Relevant zonder classified-status | 0 | 0 |
-| Nog inhoudelijk te beoordelen 0110-reviewrijen | 0 | 2.154 |
+| Nog inhoudelijk te beoordelen 0110-reviewrijen | 0 | 2.070 |
 | Onverklaarde lege bron/doel-runs | 0 | nog niet gemeten |
 | Doelrichtingsfouten | 0 | nog niet catalogusbreed gemeten |
 | Onjuiste doelteksten | 0 | nog niet catalogusbreed gemeten |
 | Persistentieverschillen | 0 | opnieuw meten na backfill |
-| Live regressies | groen, niet overgeslagen | 0111-checkpoint groen |
+| Live regressies | groen, niet overgeslagen | 0112-checkpoint groen |
 | Releasebuild | groen | opnieuw uitvoeren bij eindgate |
-| Git/database/deployment gelijk | ja | database t/m 0111; Git-checkpoint volgt |
+| Git/database/deployment gelijk | ja | database t/m 0112; Git-checkpoint volgt |
 
 De uiteindelijke tabel bevat daarnaast exacte aantallen classified, non-swap,
 review_required, relevante producten, bron/doel-runs, kandidaatparen en alle

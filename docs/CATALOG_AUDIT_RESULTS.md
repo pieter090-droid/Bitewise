@@ -142,6 +142,21 @@ Live verificatie na 0111: vier-doelen-sweep groen met 408 paren, waarvan 69 op
 portiebasis; catalogusaudit exact 15.130 rijen met 8.656 agreements, 1.972
 regelgaps, 1.450 disagreements en 3.052 reviewrijen; nul harde invarianten.
 
+## Fase 7C — duidelijke overige supermarktclusters (0112)
+
+Een tweede volledige naamlijstcontrole promoveerde 84 ondubbelzinnige
+producten uit onder meer bakgrondstoffen, brood, zuivel, kaas, supplementen,
+broodbeleg en dranken. Samengestelde namen zijn vóór uitvoering uitgesloten:
+zo werd mozzarella in een complete orzomaaltijd geen kaas-snack,
+`Müllermilk ... Brownie` geen gebak, gemberbier geen alcohol en vitamineshots
+geen poedersupplement. Na 0112 blijven 2.070 inhoudelijk te beoordelen
+quarantainerijen over.
+
+Officiële dry-run en transactionele push: geslaagd. Exacte top-3 bleef op alle
+twintig fixtures identiek. De vier-doelen-sweep bleef groen met 408 paren en
+69 portievergelijkingen. De audit telt exact 15.130 rijen: 8.656 agreements,
+2.056 regelgaps, 1.450 disagreements en 2.968 reviewrijen; `invalid_*` is nul.
+
 ## Verificatie 0106
 
 - migratie lokaal en remote aanwezig;
