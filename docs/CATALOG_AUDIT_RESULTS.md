@@ -115,6 +115,33 @@ Stand na 0110:
 
 Live catalogusaudit en exacte top-3-regressie zijn na de quarantaine groen.
 
+## Fase 7C — duidelijke vlees-, vis- en maaltijdclusters (0111)
+
+De 2.344 quarantainerijen zijn eerst volledig gegroepeerd en de 0111-
+doellijst is daarna product voor product op naam en merk gelezen. Brede
+woordmatches bleken onveilig: `bacon` kwam bijvoorbeeld ook voor in brood,
+groentegerechten, pasta en burgers. Die gevallen zijn vóór uitvoering
+uitgesloten. Alleen 190 rijen waarvan de productvorm zelfstandig bewezen is,
+zijn geclassificeerd; 2.154 twijfelgevallen blijven fail-closed pending.
+
+| Uitkomst 0111 | Aantal |
+|---|---:|
+| Veilig geclassificeerd | 190 |
+| Resterend `audit7_0110_pending` | 2.154 |
+| Harde `invalid_*`-groepen | 0 |
+
+De officiële Supabase-dry-run en transactionele live push zijn geslaagd. De
+exacte top-3-poort signaleerde één verklaarbare wijziging bij de falafelwrap:
+dertien nieuw toegelaten bapao/panini/croque-producten veranderden de top-40-
+kandidatenpool, waardoor drie al bestaande sandwiches met hogere
+datakwaliteit de oude top-3 vervingen. Alle zes producten en voedingswaarden
+zijn gecontroleerd. Capture bevestigde dat de overige negentien fixtures
+identiek bleven. De nieuwe baseline is vastgelegd.
+
+Live verificatie na 0111: vier-doelen-sweep groen met 408 paren, waarvan 69 op
+portiebasis; catalogusaudit exact 15.130 rijen met 8.656 agreements, 1.972
+regelgaps, 1.450 disagreements en 3.052 reviewrijen; nul harde invarianten.
+
 ## Verificatie 0106
 
 - migratie lokaal en remote aanwezig;

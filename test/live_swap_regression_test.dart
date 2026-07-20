@@ -84,7 +84,7 @@ const _fixtures = <_Fixture>[
   _Fixture('4718900725270', 'Roomkaas rode biet geitenkaas', 'savory_spreads',
       ['8717662263415', '8718452731107', '5430001428018']),
   _Fixture('8718907045599', 'wrap falafel tomaat', 'sandwiches_wraps',
-      ['8710400335030', '8720254963846', '2228053004952']),
+      ['8714368018837', '8710400533085', '20977047']),
   _Fixture('8710398529886', 'Paprika Max', 'crisps_chips',
       ['8710400660637', '8710398523327', '8710398526014']),
   _Fixture('4718098550654', 'chiazaad', 'nuts_seeds',
