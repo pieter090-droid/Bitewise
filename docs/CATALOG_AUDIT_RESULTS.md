@@ -4,9 +4,9 @@
 
 - Status: **NO-GO**
 - Actieve fase: 7C — nooit-beoordeelde backlog sluiten
-- Laatste afgeronde productiemigratie: 0109
+- Laatste afgeronde productiemigratie: 0110
 - Laatste gesynchroniseerde commit: `1a28527`
-- Volgende stap: de 2.344 `unreviewed_no_rule_match`-rijen clusteren en beoordelen
+- Volgende stap: de 2.344 expliciet gequarantineerde reviewrijen per cluster beoordelen
 
 ## Nulmeting 2026-07-21 vóór migratie 0107
 
@@ -90,6 +90,30 @@ Postflight na 0109:
 
 Live controles: exacte top-3 groen; vier-doelen-sweep groen met 408 paren,
 waarvan 68 op portiebasis; catalogusaudit groen en exact 15.130 unieke rijen.
+
+## Fail-closed quarantaine (0110)
+
+De resterende 2.344 rijen zonder veilige classifieruitkomst staan sinds 0110
+expliciet op `review_required` met reden `audit7_0110_pending`. Dit is een
+veilig tussencheckpoint, geen inhoudelijke goedkeuring. Daardoor zijn er nu
+nul producten met een lege classificatiestatus en kunnen deze rijen niet als
+normale swapbron of kandidaat verschijnen.
+
+Ook `compute_product_features()` is fail-closed gemaakt: een toekomstige scan
+zonder veilige familie krijgt onmiddellijk `review_required` in plaats van
+een stille NULL-status. De clusterreview promoveert hierna alleen producten
+waarvoor naam, merk, categorie en/of voeding voldoende bewijs leveren.
+
+Stand na 0110:
+
+| Status | Aantal |
+|---|---:|
+| `classified` | 11.888 |
+| `review_required` totaal | 3.242 |
+| waarvan 0110-pending | 2.344 |
+| Zonder status | 0 |
+
+Live catalogusaudit en exacte top-3-regressie zijn na de quarantaine groen.
 
 ## Verificatie 0106
 

@@ -668,3 +668,11 @@
   68 portieparen), catalogusaudit groen. Nieuwe backlog: 2.344 zonder status,
   0 resterende unreviewed regelmatches en 0 harde invalid-groepen. VOLGENDE
   STAP: de 2.344 no-rule-matchrijen systematisch clusteren en beoordelen.
+- 2026-07-21, fase 7C quarantaine: migratie 0110 zet alle 2.344 resterende
+  statusloze producten expliciet op review_required en maakt het triggerpad
+  voor toekomstige scans zonder veilige regelmatch fail-closed. Dit is geen
+  inhoudelijke afronding: `audit7_0110_pending` blijft de actieve reviewqueue.
+  Postflight: status NULL 0; classified 11.888; review totaal 3.242, waarvan
+  2.344 pending; geen unreviewed/invalid auditgroepen. Catalogusaudit en
+  exacte top-3 live groen. VOLGENDE STAP: pendingrijen per cluster beoordelen
+  en uitsluitend bewezen matches promoveren.
