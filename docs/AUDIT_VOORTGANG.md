@@ -616,8 +616,8 @@
 - [x] 7A.3 Exacte live top-3-regressie uitvoeren
 - [x] 7A.4 Live vier-doelen-sweep uitvoeren met Crackables-fixture
 - [x] 7A.5 Volledige lokale testset en `flutter analyze`
-- [ ] 7A.6 Migratie 0106 + regressie committen en pushen naar `main`
-- [ ] 7B Nulmeting en reproduceerbare catalogusaudittooling
+- [x] 7A.6 Migratie 0106 + regressie committen en pushen naar `main`
+- [x] 7B Nulmeting en reproduceerbare catalogusaudittooling
 - [ ] 7C Alle nooit-beoordeelde producten expliciet afsluiten
 - [ ] 7D Alle bestaande classificaties catalogusbreed hercontroleren
 - [ ] 7E Volledige vier-doelen-swapmatrix
@@ -643,3 +643,13 @@
   twee live tests bewust overgeslagen zonder key; dezelfde live tests zijn
   direct daarvoor aantoonbaar met key uitgevoerd. `flutter analyze`: geen
   issues. VOLGENDE STAP: 7A.6 commit + push, daarna 7B nulmeting/tooling.
+- 2026-07-21, fase 7B: actuele live nulmeting telt 15.130 producten:
+  11.496 classified, 898 review_required en 2.736 zonder status. De oude
+  3.623-telling betrof alle rijen zonder familie en mengde dus nooit-beoordeeld
+  met bewuste review. Migratie 0107 maakt een materialized auditcheckpoint.
+  Eerste gewone-viewpoging is volledig teruggerold na statement timeout; er
+  was geen datamutatie. De aangepaste migratie is officieel gedry-rund en live
+  toegepast. Auditgroepen: 388 unreviewed met actuele regelmatch, 2.348 zonder
+  regelmatch, 8.345 agreements, 1.369 disagreements, 1.782 rule gaps, 898
+  review en 0 harde invalid-groepen. VOLGENDE STAP: fase 7C, eerst de 388
+  actuele regelmatches volledig lezen en daarna pas gecontroleerd promoveren.
