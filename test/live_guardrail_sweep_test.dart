@@ -184,6 +184,7 @@ const _sourceBarcodes = <String>[
   '5410081210154', // Chokotoff (candy_sweets)
   '8714368018639', // Broodje kaas (sandwiches_wraps) - R51-splitsing
   '8712566328352', // Magnum (ice_cream_desserts)
+  '8721274813876', // Magnum Crackables Almond - 0106 classificatielek
   '8718906652750', // pindakaas (nut_butters)
   '8718907210393', // choco spread (chocolate_spreads)
   '8710398529886', // Paprika Max (crisps_chips)

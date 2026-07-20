@@ -604,3 +604,42 @@
   smaakprofiel overschreven: 0. non_swap weer relevant: 0. Bewust genulde
   rijen die terugkwamen: 0. Beide controlescripts 0 rijen, 43 app-tests
   groen, flutter analyze onveranderd.
+
+## Fase 7 — volledige catalogusdekking en releasecertificering
+
+> Hervattingsregel: begin altijd bij de eerste onafgevinkte gate. Controleer
+> vooraf `git status`, `origin/main`, `supabase migration list --linked` en de
+> laatst gelogde postflight. Een onderbroken test of migratie is niet afgerond.
+
+- [x] 7A.1 Magnum-classificatielek live herstellen (migratie 0106)
+- [x] 7A.2 Live migratiehistorie lokaal/remote gelijk t/m 0106
+- [x] 7A.3 Exacte live top-3-regressie uitvoeren
+- [x] 7A.4 Live vier-doelen-sweep uitvoeren met Crackables-fixture
+- [x] 7A.5 Volledige lokale testset en `flutter analyze`
+- [ ] 7A.6 Migratie 0106 + regressie committen en pushen naar `main`
+- [ ] 7B Nulmeting en reproduceerbare catalogusaudittooling
+- [ ] 7C Alle nooit-beoordeelde producten expliciet afsluiten
+- [ ] 7D Alle bestaande classificaties catalogusbreed hercontroleren
+- [ ] 7E Volledige vier-doelen-swapmatrix
+- [ ] 7F UI-uitkomsten voor leeg/review/non-swap/technische fout
+- [ ] 7G Permanente import- en releasepoorten
+- [ ] 7H Eindcertificering en definitieve GO/NO-GO
+
+### Fase 7-logboek
+
+- 2026-07-21, start 7A: aanleiding is EAN 8721274813876, Magnum Crackables
+  Almond. Het product had voldoende brondata maar viel door een ontbrekend
+  merksignaal buiten `compute_swap_family()`. Controle over alle 25 Magnum-
+  rijen vond drie ongeclassificeerde en twee verkeerd geclassificeerde
+  ijsproducten. Migratie 0106 voegt het Magnum-merksignaal aan de bestaande
+  ijsbranch toe, corrigeert de Magnum-rijen in `product_features`, ververst
+  het 76-branchmanifest en bevat harde postflightasserties. `products` bleef
+  raw. De migratie was bij hervatting al live, terwijl GitHub nog op commit
+  `10237ba` stond; dit synchronisatieverschil wordt in 7A.6 gesloten.
+- 2026-07-21, verificatie 7A: `supabase migration list --linked` toont lokaal
+  en remote gelijk t/m 0106. Live exacte top-3-regressie: groen. Live sweep
+  met Crackables als verplichte bronfixture: groen, 407 kandidaatparen en 67
+  portieparen over alle vier doelen. Volledige lokale testset: 43 groen en
+  twee live tests bewust overgeslagen zonder key; dezelfde live tests zijn
+  direct daarvoor aantoonbaar met key uitgevoerd. `flutter analyze`: geen
+  issues. VOLGENDE STAP: 7A.6 commit + push, daarna 7B nulmeting/tooling.
