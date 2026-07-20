@@ -31,14 +31,14 @@ aanraking van `products` overleven.
 `public.compute_swap_family(name, category, categories_tags, pnns1, pnns2,
 brand)` is de uitvoerbare bron van waarheid. Het is een PL/pgSQL-keten met
 first-match-wins-semantiek. De actuele definitie komt uit migratie 0098 en
-heeft 76 geordende branches. De historische labels R1–R57 benoemen
+heeft na migratie 0109 77 geordende branches. De historische labels R1–R57 benoemen
 auditfixes; zij zijn niet hetzelfde als het aantal runtimebranches.
 
 `public.swap_family_rules` is vanaf migraties 0104/0105 een reproduceerbaar
 manifest van die functie:
 
 - één actieve rij per runtimebranch;
-- `branch_order` 1–76 is de werkelijke evaluatievolgorde;
+- `branch_order` 1–77 is de werkelijke evaluatievolgorde;
 - `condition_sql` bevat de exacte PL/pgSQL-conditie;
 - `source_function_hash` koppelt alle rijen aan één functiedefinitie;
 - `classification_status` volgt `is_swap_relevant_default` van de familie;
@@ -52,7 +52,7 @@ faalt transactioneel.
 
 ## 3. Familiemodel
 
-`swap_family_mapping` bevat 62 families: 50 swap-relevant en 12 bewust niet
+`swap_family_mapping` bevat 63 families: 50 swap-relevant en 13 bewust niet
 swap-relevant. De tabel bepaalt cluster, producttype, vorm, consumptiewijze,
 verwante families en de standaardrelevantie.
 
@@ -79,6 +79,7 @@ Swap-relevante families per cluster:
 Bewust niet swap-relevant:
 
 `baby_food_non_swap`, `baking_ingredients_non_swap`,
+`broths_bouillon_non_swap`,
 `dairy_cooking_cream_non_swap`, `fats_oils_non_swap`, `fish_seafood`,
 `grain_starch_ingredients`, `legumes_non_swap`,
 `meat_alternatives_non_swap`, `raw_eggs_non_swap`, `raw_meat`,
@@ -196,7 +197,7 @@ Belangrijkste tests:
 - Voeg een classificatieregel toe in `compute_swap_family()`, nooit alleen in
   het manifest.
 - Plaats specifieke uitzonderingen vóór brede regels: first-match wins.
-- Synchroniseer daarna het manifest en pas de 76-branch-assertie bewust aan.
+- Synchroniseer daarna het manifest en pas de 77-branch-assertie bewust aan.
 - Wijzig familieprofielen in `swap_family_profile_defaults`, niet in een
   gekopieerde lijst.
 - Laat twijfel op `review_required`; een lege waarde is eerlijker dan gokken.

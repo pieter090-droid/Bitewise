@@ -1,7 +1,7 @@
 -- Fase 6 — read-only consistentiecheck voor runtimefunctie en regelmanifest.
 -- Iedere query hoort nul rijen terug te geven.
 
--- A. Exact 76 actieve, aaneengesloten branches.
+-- A. Exact 77 actieve, aaneengesloten branches (na bouillonsplitsing 0109).
 select 'manifest_shape' as issue,
        count(*) as active_count,
        min(branch_order) as min_order,
@@ -9,10 +9,10 @@ select 'manifest_shape' as issue,
        count(distinct branch_order) as distinct_orders
 from public.swap_family_rules
 where is_active
-having count(*) <> 76
+having count(*) <> 77
     or min(branch_order) <> 1
-    or max(branch_order) <> 76
-    or count(distinct branch_order) <> 76;
+    or max(branch_order) <> 77
+    or count(distinct branch_order) <> 77;
 
 -- B. Iedere actieve rij hoort bij de huidige functiedefinitie.
 select 'stale_function_hash' as issue, rule_key, branch_order, swap_family

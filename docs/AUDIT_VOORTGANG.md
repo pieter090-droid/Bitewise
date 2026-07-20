@@ -653,3 +653,18 @@
   regelmatch, 8.345 agreements, 1.369 disagreements, 1.782 rule gaps, 898
   review en 0 harde invalid-groepen. VOLGENDE STAP: fase 7C, eerst de 388
   actuele regelmatches volledig lezen en daarna pas gecontroleerd promoveren.
+- 2026-07-21, fase 7C deel 1: alle 388 actuele regelmatches inhoudelijk
+  gelezen. Migratie 0108: 386 classified, 2 review_required; brede woorden
+  als melk, pesto, boemboe, rozijnen en tortilla leverden aantoonbare
+  foutpositieven op en zijn barcode-verankerd naar de juiste familie geleid.
+  Eerste push volledig teruggerold op een NOT NULL-profielvangrail; na fix
+  (lege array behouden als een gemengde familie bewust geen default heeft),
+  nieuwe dry-run en transactionele push geslaagd.
+- 2026-07-21, fase 7C structurele vondst: de exacte top-3-test zette nieuwe
+  Drink Bouillon Hot Ginger boven tomatencrèmesoep. Baseline niet herijkt.
+  Migratie 0109 maakt `broths_bouillon_non_swap`, splitst bouillon/broth/
+  stock/fond/fumet uit echte soep en verhoogt het runtime-manifest naar 77
+  branches. Na push: exacte top-3 groen, vier-doelen-sweep groen (408 paren,
+  68 portieparen), catalogusaudit groen. Nieuwe backlog: 2.344 zonder status,
+  0 resterende unreviewed regelmatches en 0 harde invalid-groepen. VOLGENDE
+  STAP: de 2.344 no-rule-matchrijen systematisch clusteren en beoordelen.
