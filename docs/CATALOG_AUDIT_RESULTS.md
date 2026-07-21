@@ -157,6 +157,22 @@ twintig fixtures identiek. De vier-doelen-sweep bleef groen met 408 paren en
 69 portievergelijkingen. De audit telt exact 15.130 rijen: 8.656 agreements,
 2.056 regelgaps, 1.450 disagreements en 2.968 reviewrijen; `invalid_*` is nul.
 
+## Fase 7C — graan, pluimvee en proteïne (0113)
+
+De resterende graan-, pluimvee- en proteïnenamen zijn volledig uitgelezen en
+per productvorm gesplitst. Droge rijst/pasta wordt geen kant-en-klare maaltijd;
+proteïnerepen, -dranken, -poeders, pancakes en bowls krijgen ieder hun eigen
+familie; rauwe kip, vleesbeleg, bereide componenten en gefrituurde snacks zijn
+gescheiden. Vier twijfelgevallen zijn vóór uitvoering uitgesloten of
+omgeleid, waaronder een maaltijdpakket met `kip` en een verkeerd gespelde
+bapao.
+
+0113 classificeerde 139 rijen; 1.931 blijven pending. Dry-run, transactionele
+push, exacte top-3 en cataloguspoort zijn groen. De vier-doelen-sweep bleef
+groen met 408 paren; 67 gebruikten volledige portiedata. De audit telt 8.656
+agreements, 2.195 regelgaps, 1.450 disagreements en 2.829 reviewrijen, totaal
+15.130 en nul `invalid_*`.
+
 ## Verificatie 0106
 
 - migratie lokaal en remote aanwezig;
