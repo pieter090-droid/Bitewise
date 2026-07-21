@@ -20,10 +20,10 @@ de hele catalogus.
 | Onverklaarde lege bron/doel-runs | 0 | nog niet gemeten |
 | Doelrichtingsfouten | 0 | nog niet catalogusbreed gemeten |
 | Onjuiste doelteksten | 0 | nog niet catalogusbreed gemeten |
-| Persistentieverschillen | 0 | fase 7D gestart: 2.239 gaps / 1.450 disagreements |
-| Live regressies | groen, niet overgeslagen | 0114-checkpoint groen |
+| Onverklaarde persistentieverschillen | 0 | 0; 15.130 auditbesluiten vastgelegd |
+| Live regressies | groen, niet overgeslagen | 0115: top-3 2x identiek; sweep groen |
 | Releasebuild | groen | opnieuw uitvoeren bij eindgate |
-| Git/database/deployment gelijk | ja | database t/m 0114; Git-checkpoint volgt |
+| Git/database/deployment gelijk | ja | database t/m 0115; Git-checkpoint volgt |
 
 De uiteindelijke tabel bevat daarnaast exacte aantallen classified, non-swap,
 review_required, relevante producten, bron/doel-runs, kandidaatparen en alle

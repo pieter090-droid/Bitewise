@@ -198,6 +198,32 @@ paren en 67 portievergelijkingen. Catalogusaudit: 15.130 rijen, 8.656
 agreements, 2.239 regelgaps, 1.450 disagreements, 2.785 reviewrijen en nul
 `invalid_*`.
 
+## Fase 7D — alle opgeslagen classificaties gereconcilieerd (0115)
+
+Alle 3.689 gaps/disagreements zijn per familiepaar en beslisbron gegroepeerd.
+De grootste risicogroep bestond uit 439 verschillen die ook swaprelevantie
+omklapten. 0115 corrigeerde 68 aantoonbare fouten (onder meer
+vleesvervangers als maaltijdcomponent, babyproducten als gewone snack,
+peulvruchten als verse groente en gyoza als graan), bevestigde 76 specifieke
+legacy-overrides en legde 494 legacygaps zonder tegensprekende regel vast.
+358 onverklaarde verschillen zijn fail-closed naar `review_required` gegaan.
+
+De eerste twee live uitvoerpogingen zijn volledig teruggerold: respectievelijk
+274 en 240 SQL-NULL-redenen passeerden een `NOT LIKE`/`NOT (...)` niet zoals
+lege strings. De postflight bleef streng; beide vergelijkingen zijn met
+`coalesce` null-veilig gemaakt. De derde run slaagde met exact 15.130 rijen in
+`classification_audit_decisions` en nul `release_blocking`.
+
+De exacte top-3-test legde daarna een los structureel probleem bloot:
+databasequeries begrensden op datakwaliteit, maar hadden bij gelijke kwaliteit
+geen tweede sorteersleutel. Een materialized-viewrefresh kon daardoor een
+andere top-40-pool geven zonder dat productdata veranderde. Alle kandidaat-
+queries sorteren nu secundair op barcode. De twintig live top-3-fixtures zijn
+op die deterministische selectie herijkt en tweemaal achter elkaar identiek
+uitgevoerd. Vier-doelen-sweep: 407 paren, 72 portievergelijkingen, groen.
+Catalogusaudit: 8.706 agreements, 1.999 verklaarde gaps, 1.282 verklaarde
+disagreements, 3.143 fail-closed reviewrijen, totaal 15.130 en nul invalid.
+
 ## Verificatie 0106
 
 - migratie lokaal en remote aanwezig;

@@ -676,3 +676,17 @@
   2.344 pending; geen unreviewed/invalid auditgroepen. Catalogusaudit en
   exacte top-3 live groen. VOLGENDE STAP: pendingrijen per cluster beoordelen
   en uitsluitend bewezen matches promoveren.
+- 2026-07-21, fase 7C afgerond (0111-0114): alle 2.344 pendingrijen zijn
+  systematisch gegroepeerd. 457 zijn op naam/merk/categorie bewezen
+  geclassificeerd; 1.887 hebben een concrete fail-closed eindreden. Generieke
+  pending = 0. Iedere migratie had snapshot, officiële dry-run, transactie en
+  postflight; alle live top-3-, vier-doelen- en cataloguspoorten groen.
+- 2026-07-21, fase 7D afgerond (0115): alle 3.689 opgeslagen/classifier-
+  verschillen gereconcilieerd. 68 correcties, 76 bevestigde legacy-overrides,
+  494 verklaarde legacygaps en 358 onverklaarde verschillen naar review.
+  `classification_audit_decisions` bevat exact 15.130 beslissingen en 0
+  release_blocking. Twee pogingen rolden volledig terug door SQL-NULL-
+  semantiek; de null-veilige derde run slaagde. Een gevonden niet-
+  deterministische top-40-kandidatenpool is opgelost met barcode als tweede
+  sorteersleutel; live top-3 tweemaal identiek, sweep 407 paren groen.
+  VOLGENDE STAP: fase 7E, volledige vier-doelenmatrix catalogusbreed maken.

@@ -190,8 +190,10 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
     query = lowerIsBetter
         ? query.lt(column, sourceValue)
         : query.gt(column, sourceValue);
-    final rows =
-        await query.order(column, ascending: lowerIsBetter).limit(limit);
+    final rows = await query
+        .order(column, ascending: lowerIsBetter)
+        .order('barcode')
+        .limit(limit);
     return (rows as List)
         .map((r) =>
             SwapCandidate.fromJoinedJson((r as Map).cast<String, dynamic>()))
@@ -220,6 +222,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
+            .order('barcode')
             .limit(limit);
         final candidates = (rows as List)
             .map((r) => SwapCandidate.fromJoinedJson(
@@ -254,6 +257,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
+            .order('barcode')
             .limit(limit);
         final candidates = (rows as List)
             .map((r) => SwapCandidate.fromJoinedJson(
@@ -271,6 +275,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
+            .order('barcode')
             .limit(limit);
         final candidates = (rows as List)
             .map((r) => SwapCandidate.fromJoinedJson(
@@ -288,6 +293,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
             .neq('barcode', excludeBarcode)
             .ilike('category', '%$fallbackCategory%')
             .order('data_quality_score', ascending: false)
+            .order('barcode')
             .limit(limit);
         return (rows as List)
             .map((r) => SwapCandidate.fromJoinedJson(
@@ -343,6 +349,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
             .eq('is_swap_relevant', true)
             .neq('barcode', excludeBarcode)
             .order('data_quality_score', ascending: false)
+            .order('barcode')
             .limit(limit);
         final candidates = (rows as List)
             .map((r) => SwapCandidate.fromJoinedJson(
@@ -364,6 +371,7 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
       }
       final rows = await query
           .order('data_quality_score', ascending: false)
+          .order('barcode')
           .limit(limit);
       return (rows as List)
           .map((r) =>
