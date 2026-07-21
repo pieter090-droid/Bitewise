@@ -618,11 +618,11 @@
 - [x] 7A.5 Volledige lokale testset en `flutter analyze`
 - [x] 7A.6 Migratie 0106 + regressie committen en pushen naar `main`
 - [x] 7B Nulmeting en reproduceerbare catalogusaudittooling
-- [ ] 7C Alle nooit-beoordeelde producten expliciet afsluiten
-- [ ] 7D Alle bestaande classificaties catalogusbreed hercontroleren
-- [ ] 7E Volledige vier-doelen-swapmatrix
-- [ ] 7F UI-uitkomsten voor leeg/review/non-swap/technische fout
-- [ ] 7G Permanente import- en releasepoorten
+- [x] 7C Alle nooit-beoordeelde producten expliciet afsluiten
+- [x] 7D Alle bestaande classificaties catalogusbreed hercontroleren
+- [x] 7E Volledige vier-doelen-swapmatrix
+- [x] 7F UI-uitkomsten voor leeg/review/non-swap/technische fout
+- [x] 7G Permanente import- en releasepoorten
 - [ ] 7H Eindcertificering en definitieve GO/NO-GO
 
 ### Fase 7-logboek
@@ -696,3 +696,11 @@
   fouten. `Andere opties`: eveneens 41.192 runs, 36.043 getoonde cross-family
   paren, 0 familie-, zoet/hartig-, richting- of beloftefouten. VOLGENDE STAP:
   fase 7F/7G, UI-gedrag, volledige lokale suite en releasebuild.
+- 2026-07-21, fase 7F/7G afgerond: de lege resultaatstatus zegt nu expliciet
+  dat alleen betrouwbare, doelpassende swaps worden getoond en maakt geen
+  onjuiste belofte over ontbrekende verrijking. `flutter analyze` is schoon;
+  43 lokale tests zijn groen (de vijf live gates zijn bewust zonder key
+  overgeslagen en worden in 7H afzonderlijk met key uitgevoerd). De web-
+  release bouwt groen en de ingebouwde Wasm-dry-run slaagt. Beide workflow-
+  YAML-bestanden parsen en bevatten jobs. VOLGENDE STAP: commit/deploy,
+  alle live gates zonder skip herhalen en daarna pas 7H op GO zetten.

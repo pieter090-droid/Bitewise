@@ -140,10 +140,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                   data: (result) => switch (result) {
                     RuleBasedSwapNotFound() => const _Info(
                         icon: Icons.inbox_outlined,
-                        title: 'Geen swaps gevonden',
+                        title: 'Nog geen veilige swap',
                         body:
-                            'Voor dit product hebben we nog geen alternatief -- '
-                            'mogelijk is het nog niet verrijkt of niet swap-relevant.',
+                            'We tonen alleen alternatieven die betrouwbaar '
+                            'vergelijkbaar zijn en bij je gekozen doel passen. '
+                            'Voor dit product is die veilige match er nu niet.',
                       ),
                     RuleBasedSwapError() => const _Info(
                         icon: Icons.cloud_off,
