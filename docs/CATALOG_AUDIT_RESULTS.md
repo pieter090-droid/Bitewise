@@ -2,11 +2,11 @@
 
 ## Actueel hervattingsanker
 
-- Status: **NO-GO**
-- Actieve fase: 7C — nooit-beoordeelde backlog sluiten
-- Laatste afgeronde productiemigratie: 0110
-- Laatste gesynchroniseerde commit: `1a28527`
-- Volgende stap: de 2.344 expliciet gequarantineerde reviewrijen per cluster beoordelen
+- Status: **GO**
+- Actieve fase: fase 7 volledig gecertificeerd
+- Laatste afgeronde productiemigratie: 0115
+- Gecertificeerde code/deployment: `0c36c13`
+- Eindbewijs: `docs/RELEASE_CERTIFICATION.md`
 
 ## Nulmeting 2026-07-21 vóór migratie 0107
 

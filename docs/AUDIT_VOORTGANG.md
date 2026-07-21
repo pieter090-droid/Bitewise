@@ -623,7 +623,7 @@
 - [x] 7E Volledige vier-doelen-swapmatrix
 - [x] 7F UI-uitkomsten voor leeg/review/non-swap/technische fout
 - [x] 7G Permanente import- en releasepoorten
-- [ ] 7H Eindcertificering en definitieve GO/NO-GO
+- [x] 7H Eindcertificering en definitieve GO/NO-GO
 
 ### Fase 7-logboek
 
@@ -704,3 +704,12 @@
   release bouwt groen en de ingebouwde Wasm-dry-run slaagt. Beide workflow-
   YAML-bestanden parsen en bevatten jobs. VOLGENDE STAP: commit/deploy,
   alle live gates zonder skip herhalen en daarna pas 7H op GO zetten.
+- 2026-07-21, fase 7H afgerond — **GO**. Lokaal: `flutter analyze` schoon,
+  43 tests groen, workflow-YAML geldig en webrelease inclusief ingebouwde
+  Wasm-dry-run groen. Live zonder skips: catalogusaudit 15.130/15.130,
+  exacte top-3 groen, sweep 407 paren groen, directe volledige matrix
+  41.192 runs/202.831 paren en cross-matrix 41.192 runs/36.043 paren,
+  overal nul onverklaarde of vangrailfouten. Migraties lokaal/remote gelijk
+  t/m 0115. Checkpoint `0c36c13` is door GitHub Pages succesvol uitgerold en
+  de gedeployde bundle bevat de fail-closed UI-tekst. Definitief bewijs staat
+  in `docs/RELEASE_CERTIFICATION.md`.

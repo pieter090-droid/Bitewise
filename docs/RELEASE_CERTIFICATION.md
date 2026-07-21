@@ -2,11 +2,10 @@
 
 ## Huidige beslissing
 
-**NO-GO — fase 7 loopt.**
+**GO — fase 7 is volledig gecertificeerd op 2026-07-21.**
 
-Dit document wordt pas op GO gezet wanneer de volledige catalogus- en
-swapmatrixgates zijn gehaald. Een groene steekproef geldt niet als bewijs voor
-de hele catalogus.
+De beslissing rust op de volledige live catalogus en vier doelen, niet op een
+steekproef. Alle live tests zijn met sleutel uitgevoerd en niet overgeslagen.
 
 ## Vereist eindbewijs
 
@@ -21,10 +20,28 @@ de hele catalogus.
 | Doelrichtingsfouten | 0 | 0 in 202.831 directe + 36.043 cross-paren |
 | Onjuiste doelteksten | 0 | 0 catalogusbreed |
 | Onverklaarde persistentieverschillen | 0 | 0; 15.130 auditbesluiten vastgelegd |
-| Live regressies | groen, niet overgeslagen | 0115: top-3 2x identiek; sweep groen |
+| Live regressies | groen, niet overgeslagen | top-3, sweep, catalogusaudit en beide volledige matrices groen |
 | Releasebuild | groen | web release + Wasm dry-run groen |
-| Git/database/deployment gelijk | ja | database t/m 0115; Git-checkpoint volgt |
+| Git/database/deployment gelijk | ja | database t/m 0115; Pages draait checkpoint `0c36c13` |
 
-De uiteindelijke tabel bevat daarnaast exacte aantallen classified, non-swap,
-review_required, relevante producten, bron/doel-runs, kandidaatparen en alle
-verklaarde lege uitkomsten.
+## Definitieve aantallen
+
+| Grootheid | Aantal |
+|---|---:|
+| Producten totaal | 15.130 |
+| `classified` | 11.987 |
+| `review_required` met concrete fail-closed beslissing | 3.143 |
+| Swap-relevante bronproducten | 10.298 |
+| Classified non-swapproducten | 1.689 |
+| Directe bron/doel-runs | 41.192 |
+| Directe topparen | 202.831 |
+| Cross-family bron/doel-runs | 41.192 |
+| Cross-family paren | 36.043 |
+| Verklaard leeg: scorepoort | 167 |
+| Verklaard leeg: geen niet-slechtere doelskandidaat | 62 |
+| Onverklaard leeg | 0 |
+
+De GitHub Pages-workflow voor `0c36c13` is succesvol afgerond. De live bundle
+bevat aantoonbaar de nieuwe tekst `Nog geen veilige swap`. Lokale analyse,
+43 niet-live tests, workflow-YAML-validatie en de releasebuild zijn groen;
+de vijf live gates zijn daarna samen met publieke deploymentsleutel groen.
