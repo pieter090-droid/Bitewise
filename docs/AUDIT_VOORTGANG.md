@@ -690,3 +690,9 @@
   deterministische top-40-kandidatenpool is opgelost met barcode als tweede
   sorteersleutel; live top-3 tweemaal identiek, sweep 407 paren groen.
   VOLGENDE STAP: fase 7E, volledige vier-doelenmatrix catalogusbreed maken.
+- 2026-07-21, fase 7E afgerond: nieuwe permanente live matrix over 10.298
+  relevante bronnen en alle vier doelen. 41.192 directe runs, 202.831
+  topparen (72.243 op portiebasis), 0 onverklaard leeg en 0 richting-/tekst-
+  fouten. `Andere opties`: eveneens 41.192 runs, 36.043 getoonde cross-family
+  paren, 0 familie-, zoet/hartig-, richting- of beloftefouten. VOLGENDE STAP:
+  fase 7F/7G, UI-gedrag, volledige lokale suite en releasebuild.

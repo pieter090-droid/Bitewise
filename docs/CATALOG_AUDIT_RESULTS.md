@@ -224,6 +224,36 @@ uitgevoerd. Vier-doelen-sweep: 407 paren, 72 portievergelijkingen, groen.
 Catalogusaudit: 8.706 agreements, 1.999 verklaarde gaps, 1.282 verklaarde
 disagreements, 3.143 fail-closed reviewrijen, totaal 15.130 en nul invalid.
 
+## Fase 7E — volledige vier-doelenmatrix
+
+`live_full_catalog_swap_matrix_test.dart` leest de volledige resolved
+catalogus, reproduceert de deterministische app-pool (top-40 datakwaliteit +
+maximaal 20 doelgerichte aanvullingen) en rekent daarna ieder relevant,
+classified bronproduct voor alle vier doelen door. Dit is geen steekproef.
+
+| Matrix | Uitkomst |
+|---|---:|
+| Relevante bronproducten | 10.298 |
+| Directe bron/doel-runs | 41.192 |
+| Niet-lege directe runs | 40.963 |
+| Gecontroleerde directe topparen | 202.831 |
+| Waarvan volledige portievergelijkingen | 72.243 |
+| Leeg: alle kandidaten terecht door scorepoort geweigerd | 167 |
+| Leeg: geen niet-slechtere kandidaat op gekozen doelas | 62 |
+| Onverklaarde lege runs | 0 |
+| Cross-family bron/doel-runs (`Andere opties`) | 41.192 |
+| Niet-lege cross-family-runs | 9.230 |
+| Gecontroleerde cross-family-paren | 36.043 |
+| Familie-/status-/relevantie-/doelrichtingsfouten | 0 |
+| Zoet-hartigconflicten / onterechte doelbeloften | 0 |
+
+De eerste testrun ontdekte geen modelrichtingfout, maar wel twee fouten in de
+nieuwe meetcode: een doelbelofte werd onterecht altijd tegen 100 g gemeten
+terwijl de app bij complete portiedata de portie gebruikt, en verklaarde
+scorepoort-uitsluitingen stonden als onverklaard. Die meetlogica is aangepast;
+de scorecode is daarvoor niet versoepeld. De volledige directe en cross-
+family matrices zijn daarna samen groen uitgevoerd.
+
 ## Verificatie 0106
 
 - migratie lokaal en remote aanwezig;
