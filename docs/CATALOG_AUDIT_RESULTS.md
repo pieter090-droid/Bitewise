@@ -173,6 +173,31 @@ groen met 408 paren; 67 gebruikten volledige portiedata. De audit telt 8.656
 agreements, 2.195 regelgaps, 1.450 disagreements en 2.829 reviewrijen, totaal
 15.130 en nul `invalid_*`.
 
+## Fase 7C — nooit-beoordeelde catalogus volledig gesloten (0114)
+
+De laatste 1.931 generieke pendingrijen zijn definitief verantwoord. Nog 44
+producten konden veilig worden geclassificeerd op de combinatie van een
+specifieke broncategorie en passende naam. De overige 1.887 blijven bewust
+`review_required`, buiten bron- en kandidaatselectie, met een concrete reden:
+
+| Eindreden | Aantal |
+|---|---:|
+| Onvoldoende taxonomie voor veilige productvorm | 1.486 |
+| Brede of strijdige broncategorie | 213 |
+| Corrupte/onjuiste tekstcodering | 133 |
+| Herkenbare maar niet ondersteunde productvorm | 52 |
+| Samengesteld en echt ambigu | 3 |
+| Categorie-bewezen geclassificeerd | 44 |
+| Totaal verantwoord | 1.931 |
+
+Hiermee is `audit7_0110_pending` exact nul. Over fase 7C zijn vanuit het
+oorspronkelijke pendingsegment 457 producten geclassificeerd en 1.887 met
+inhoudelijke eindreden fail-closed gebleven. Dry-run, transactie en postflight
+zijn geslaagd. Exacte top-3 bleef identiek; vier-doelen-sweep groen met 408
+paren en 67 portievergelijkingen. Catalogusaudit: 15.130 rijen, 8.656
+agreements, 2.239 regelgaps, 1.450 disagreements, 2.785 reviewrijen en nul
+`invalid_*`.
+
 ## Verificatie 0106
 
 - migratie lokaal en remote aanwezig;
