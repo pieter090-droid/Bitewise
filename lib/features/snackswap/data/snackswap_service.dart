@@ -69,28 +69,34 @@ is_less_processed,has_sweeteners,has_palm_oil,ingredient_count
         AppConstants.fnLookupProduct,
         body: {'barcode': trimmed},
       );
-
-      final data = response.data;
-      if (data is! Map) {
-        return const LookupError('Onverwacht antwoord van de server.');
-      }
-      final map = data.cast<String, dynamic>();
-
-      final found = map['found'] == true;
-      final product = map['product'];
-      if (!found || product == null) {
-        return const LookupNotFound();
-      }
-
-      return LookupFound(
-        SnackProduct.fromJson(
-          (product as Map).cast<String, dynamic>(),
-          source: map['source'] as String?,
-        ),
-      );
+      return parseLookupResponse(response.data);
     } catch (e) {
       return LookupError(_friendly(e));
     }
+  }
+
+  /// Houdt het Edge-Functioncontract expliciet en unit-testbaar.
+  static LookupOutcome parseLookupResponse(Object? data) {
+    if (data is! Map) {
+      return const LookupError('Onverwacht antwoord van de server.');
+    }
+    final map = data.cast<String, dynamic>();
+    final product = map['product'];
+
+    // `found` is het actuele contract. De product-check houdt de client
+    // daarnaast compatibel met een kortstondig oudere function deployment.
+    final found = map['found'] == true || product is Map;
+    if (!found || product == null) return const LookupNotFound();
+    if (product is! Map) {
+      return const LookupError('Onverwacht productformaat van de server.');
+    }
+
+    return LookupFound(
+      SnackProduct.fromJson(
+        product.cast<String, dynamic>(),
+        source: map['source'] as String?,
+      ),
+    );
   }
 
   /// Zoekt producten op naam in de Supabase `products`-tabel (voor suggesties).

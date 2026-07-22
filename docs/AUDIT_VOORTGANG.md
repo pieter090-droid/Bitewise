@@ -713,3 +713,18 @@
   t/m 0115. Checkpoint `0c36c13` is door GitHub Pages succesvol uitgerold en
   de gedeployde bundle bevat de fail-closed UI-tekst. Definitief bewijs staat
   in `docs/RELEASE_CERTIFICATION.md`.
+- 2026-07-22, nieuwe-barcodepad hersteld: `lookup_product` gebruikt nu het
+  actuele products-schema (`*_100g`), behoudt ontbrekende voeding als NULL,
+  retourneert het expliciete `found`-contract en meldt succes uitsluitend na
+  een geslaagde database-upsert. Een normale OFF-miss blijft `not found` en
+  geen serverfout. End-to-end bewezen met twee nieuwe barcodes: een onzekere
+  riblap kwam veilig op `review_required`; een herkenbaar Jumbo-sorbetijs werd
+  `classified`, `ice_cream_desserts`, swap-relevant en leverde via dezelfde
+  resolved appquery kandidaten op. Permanente contract- en live-regressietests
+  toegevoegd.
+- 2026-07-22, dynamische cataloguspoort: de auditview uit 0107 is een
+  materialized releasecheckpoint en groeit niet per scan mee. De live test
+  behandelt hem daarom als onveranderlijk checkpoint en controleert alle
+  latere `product_features_resolved`-rijen rechtstreeks op dezelfde
+  fail-closed invarianten. De volledige matrix gebruikt 15.130 voortaan als
+  ondergrens in plaats van een foutieve vaste eindtelling.

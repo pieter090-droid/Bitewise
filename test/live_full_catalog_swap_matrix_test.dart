@@ -29,7 +29,9 @@ void main() {
         if (rows.length < 1000) break;
       }
 
-      expect(all.length, 15130);
+      // 15.130 is het gecertificeerde releasecheckpoint; geldige nieuwe
+      // scans mogen de catalogus daarna uitsluitend laten groeien.
+      expect(all.length, greaterThanOrEqualTo(15130));
       expect(all.map((p) => p.barcode).toSet().length, all.length);
 
       final relevant = all
