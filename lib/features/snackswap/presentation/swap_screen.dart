@@ -579,25 +579,27 @@ class _SwapCard extends StatelessWidget {
               ),
           ],
           const SizedBox(height: 12),
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: onFeedback,
-                icon: const Icon(Icons.feedback_outlined, size: 18),
-                label: const Text('Feedback'),
-              ),
-              const Spacer(),
-              FilledButton.icon(
-                onPressed: logging ? null : onLog,
-                icon: logging
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check, size: 18),
-                label: const Text('Gebruik deze swap'),
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onFeedback,
+              icon: const Icon(Icons.feedback_outlined, size: 18),
+              label: const Text('Feedback'),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: logging ? null : onLog,
+              icon: logging
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check, size: 18),
+              label: const Text('Gebruik deze swap'),
+            ),
           ),
         ],
       ),
