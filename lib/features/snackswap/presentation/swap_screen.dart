@@ -12,6 +12,7 @@ import 'package:bitewise/features/snackswap/domain/swap_comparison.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
 import 'package:bitewise/features/sync/application/sync_coordinator.dart';
+import 'package:bitewise/features/tracker/application/tracker_providers.dart';
 import 'package:bitewise/features/tracker/domain/meal_type.dart';
 import 'package:bitewise/features/snackswap/presentation/swap_feedback_sheet.dart';
 
@@ -90,16 +91,41 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     setState(() => _loggingBarcodes.add(item.barcode));
     final meal = MealType.suggestForNow();
     try {
-      await ref.read(swapHistoryRepositoryProvider).useSwap(
+      final receipt = await ref.read(swapHistoryRepositoryProvider).useSwap(
             source: source,
             result: result,
             goal: goal,
             meal: meal,
           );
+      if (receipt.dayLogId <= 0 || receipt.swapEventId <= 0) {
+        throw StateError('Swapregistratie is niet bevestigd.');
+      }
+
+      final now = DateTime.now();
+      ref.read(selectedDayProvider.notifier).state =
+          DateTime(now.year, now.month, now.day);
+      ref.invalidate(dayLogsProvider);
+      ref.invalidate(weeklyKcalProvider);
       ref.read(syncCoordinatorProvider).onLogsChanged();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${item.name} gebruikt als swap')),
+        SnackBar(
+          content: Text('${item.name} staat in vandaag en je swapresultaten.'),
+          action: SnackBarAction(
+            label: 'Bekijk dag',
+            onPressed: () => context.go(Routes.home),
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Swap registreren mislukt: $error\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'De swap kon niet worden opgeslagen. Probeer het opnieuw.',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _loggingBarcodes.remove(item.barcode));

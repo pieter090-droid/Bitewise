@@ -6,6 +6,7 @@ import 'package:bitewise/features/snackswap/data/swap_feedback_repository.dart';
 import 'package:bitewise/features/snackswap/data/swap_history_repository.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
+import 'package:bitewise/features/tracker/data/day_logs_repository.dart';
 import 'package:bitewise/features/tracker/domain/meal_type.dart';
 
 void main() {
@@ -18,18 +19,32 @@ void main() {
     final repo = SwapHistoryRepository(db);
     final source = _candidate('from', 'Bron', 300, 20, 5);
     final candidate = _candidate('to', 'Swap', 180, 8, 12);
+    final day = DateTime(2026, 7, 22);
+    final homeUpdate = DayLogsRepository(db)
+        .watchForDay(day)
+        .firstWhere((rows) => rows.isNotEmpty);
+    final resultsUpdate =
+        repo.watchBetween(day, day).firstWhere((rows) => rows.isNotEmpty);
 
-    await repo.useSwap(
+    final receipt = await repo.useSwap(
       source: source,
       result: _result(candidate),
       goal: SwapGoal.minderKcal,
       meal: MealType.lunch,
       at: DateTime(2026, 7, 22, 12),
     );
+    final watchedHomeLogs =
+        await homeUpdate.timeout(const Duration(seconds: 2));
+    final watchedResults =
+        await resultsUpdate.timeout(const Duration(seconds: 2));
 
     final logs = await db.select(db.dayLogs).get();
     final events = await db.select(db.swapEvents).get();
     expect(logs, hasLength(1));
+    expect(receipt.dayLogId, logs.single.id);
+    expect(receipt.swapEventId, events.single.id);
+    expect(watchedHomeLogs.single.productName, 'Swap');
+    expect(watchedResults.single.toName, 'Swap');
     expect(logs.single.productName, 'Swap');
     expect(logs.single.kcal, 180);
     expect(events, hasLength(1));

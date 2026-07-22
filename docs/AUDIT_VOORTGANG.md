@@ -741,3 +741,11 @@
   zonder goede swap. De bestaande classificatie, kandidaatselectie en score
   zijn niet gewijzigd. Migratie van de lokale Drift-database naar schema 4,
   repositorytransacties en rekenregels zijn met gerichte tests afgedekt.
+- 2026-07-22, swapregistratie zichtbaar gemaakt: `Gebruik deze swap` geeft
+  pas een succesmelding nadat zowel het daglog als de onveranderlijke
+  besparingssnapshot een geldige database-id hebben teruggegeven. Daarna
+  wordt het geselecteerde dagboek expliciet op vandaag gezet en worden de
+  Home- en weekstreams vernieuwd. De melding bevat `Bekijk dag`; bij een
+  databasefout verschijnt voortaan een foutmelding in plaats van stil succes.
+  Een regressietest abonneert zich vooraf op beide streams en bewijst dat één
+  transactie zowel Home als Mijn swapresultaten direct laat verversen.

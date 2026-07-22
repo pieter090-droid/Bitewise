@@ -13,7 +13,7 @@ class SwapHistoryRepository {
 
   DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  Future<void> useSwap({
+  Future<SwapUseReceipt> useSwap({
     required SwapCandidate source,
     required SwapScoreResult result,
     required SwapGoal goal,
@@ -23,8 +23,8 @@ class SwapHistoryRepository {
     final now = at ?? DateTime.now();
     final comparison = SwapComparison.forResult(source: source, result: result);
     final to = comparison.candidate;
-    await _db.transaction(() async {
-      await _db.into(_db.dayLogs).insert(
+    return _db.transaction(() async {
+      final dayLogId = await _db.into(_db.dayLogs).insert(
             DayLogsCompanion.insert(
               barcode: Value(result.candidate.barcode),
               productName: result.candidate.name,
@@ -38,7 +38,7 @@ class SwapHistoryRepository {
               logDate: _day(now),
             ),
           );
-      await _db.into(_db.swapEvents).insert(
+      final swapEventId = await _db.into(_db.swapEvents).insert(
             SwapEventsCompanion.insert(
               fromBarcode: source.barcode,
               fromName: source.name,
@@ -61,6 +61,7 @@ class SwapHistoryRepository {
               eventDate: _day(now),
             ),
           );
+      return SwapUseReceipt(dayLogId: dayLogId, swapEventId: swapEventId);
     });
   }
 
@@ -73,6 +74,13 @@ class SwapHistoryRepository {
 
   double _scaled(double? value, double amount) =>
       value == null ? 0 : value * amount / 100.0;
+}
+
+class SwapUseReceipt {
+  const SwapUseReceipt({required this.dayLogId, required this.swapEventId});
+
+  final int dayLogId;
+  final int swapEventId;
 }
 
 final swapHistoryRepositoryProvider = Provider<SwapHistoryRepository>(
