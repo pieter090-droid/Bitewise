@@ -29,9 +29,10 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: AppColors.navy,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
+          fontFamily: 'Georgia',
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.3,
         ),
       ),
       cardTheme: CardThemeData(
@@ -39,7 +40,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           side: const BorderSide(color: AppColors.mist),
         ),
       ),
@@ -52,7 +53,7 @@ abstract final class AppTheme {
           elevation: 0,
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
@@ -63,7 +64,7 @@ abstract final class AppTheme {
           side: const BorderSide(color: AppColors.navy),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
@@ -74,7 +75,7 @@ abstract final class AppTheme {
           minimumSize: const Size.fromHeight(54),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
@@ -84,15 +85,15 @@ abstract final class AppTheme {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.mist),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.mist),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.gold, width: 1.6),
         ),
       ),
@@ -103,7 +104,7 @@ abstract final class AppTheme {
         secondaryLabelStyle: const TextStyle(color: AppColors.white),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -135,21 +136,25 @@ abstract final class AppTheme {
     return base.copyWith(
       displaySmall: base.displaySmall?.copyWith(
         color: AppColors.navy,
-        fontWeight: FontWeight.w700,
+        fontFamily: 'Georgia',
+        fontWeight: FontWeight.w600,
         letterSpacing: -0.5,
       ),
       headlineMedium: base.headlineMedium?.copyWith(
         color: AppColors.navy,
-        fontWeight: FontWeight.w700,
+        fontFamily: 'Georgia',
+        fontWeight: FontWeight.w600,
         letterSpacing: -0.4,
       ),
       headlineSmall: base.headlineSmall?.copyWith(
         color: AppColors.navy,
-        fontWeight: FontWeight.w700,
+        fontFamily: 'Georgia',
+        fontWeight: FontWeight.w600,
       ),
       titleLarge: base.titleLarge?.copyWith(
         color: AppColors.navy,
-        fontWeight: FontWeight.w700,
+        fontFamily: 'Georgia',
+        fontWeight: FontWeight.w600,
       ),
       titleMedium: base.titleMedium?.copyWith(
         color: AppColors.navy,

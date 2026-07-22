@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0-test",
+  "name": "Bitewise Editorial Premium",
+  "colors": {
+    "navy": "#062B52",
+    "gold": "#C99A3D",
+    "cream": "#FAF7F0",
+    "sage": "#6D8E5D",
+    "ink": "#18324B",
+    "slate": "#667789",
+    "hairline": "#E8E0D4"
+  },
+  "typography": {
+    "display": "Georgia",
+    "interface": "system",
+    "principle": "Editorial serif for identity and key outcomes; sans-serif for controls and data."
+  },
+  "shape": {
+    "cardRadius": 12,
+    "controlRadius": 10,
+    "hairlineWidth": 1
+  },
+  "marks": {
+    "bitewise": "BW: B plus W made from two interlocking checks",
+    "snackswap": "SW: S plus the same double-check W",
+    "wordmarkRule": "The w in Bitewise and SnackSwap is always the navy/gold double-check W."
+  },
+  "productImagery": "No product images are assumed. Use name, brand, category, barcode and nutrition metadata."
+}

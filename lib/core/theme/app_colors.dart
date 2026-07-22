@@ -5,24 +5,24 @@ import 'package:flutter/material.dart';
 /// Premium, rustig en betrouwbaar. Navy als basis, goud als accent.
 abstract final class AppColors {
   // Brand
-  static const Color navy = Color(0xFF0D1B2A);
-  static const Color gold = Color(0xFFC9A84C);
-  static const Color cream = Color(0xFFF7F3EA);
+  static const Color navy = Color(0xFF062B52);
+  static const Color gold = Color(0xFFC99A3D);
+  static const Color cream = Color(0xFFFAF7F0);
 
   // Navy shades
-  static const Color navy800 = Color(0xFF16273A);
-  static const Color navy600 = Color(0xFF1F3A54);
-  static const Color navy400 = Color(0xFF3B5470);
+  static const Color navy800 = Color(0xFF0C355C);
+  static const Color navy600 = Color(0xFF34546F);
+  static const Color navy400 = Color(0xFF6E8293);
 
   // Neutrals
-  static const Color ink = Color(0xFF0D1B2A);
-  static const Color slate = Color(0xFF5B6B7B);
-  static const Color mist = Color(0xFFEDF1F5);
-  static const Color surface = Color(0xFFFAFBFC);
+  static const Color ink = Color(0xFF18324B);
+  static const Color slate = Color(0xFF667789);
+  static const Color mist = Color(0xFFE8E0D4);
+  static const Color surface = cream;
   static const Color white = Color(0xFFFFFFFF);
 
   // Semantic
-  static const Color success = Color(0xFF3E9E6B);
+  static const Color success = Color(0xFF6D8E5D);
   static const Color warning = Color(0xFFD9A441);
   static const Color danger = Color(0xFFC65B54);
 

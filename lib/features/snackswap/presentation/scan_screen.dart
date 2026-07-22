@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:bitewise/core/branding/brand_marks.dart';
 import 'package:bitewise/core/router/app_router.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/snackswap/data/snackswap_service.dart';
@@ -84,7 +85,9 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
-        title: Text(widget.pickMode ? 'Kies product' : 'Toevoegen'),
+        title: widget.pickMode
+            ? const Text('Kies product')
+            : const BrandWordmark(mark: BrandMark.snackSwap, fontSize: 22),
       ),
       body: SafeArea(
         child: Column(

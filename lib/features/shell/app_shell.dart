@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:bitewise/core/branding/brand_marks.dart';
 import 'package:bitewise/core/router/app_router.dart';
 
 /// Scaffold met bottom-navigatie rond de hoofdschermen.
@@ -20,7 +21,7 @@ class AppShell extends StatelessWidget {
       route: Routes.scan,
       icon: Icons.qr_code_scanner_outlined,
       active: Icons.qr_code_scanner,
-      label: 'Scan'
+      label: 'SnackSwap'
     ),
     (
       route: Routes.favorites,
@@ -56,8 +57,18 @@ class AppShell extends StatelessWidget {
         destinations: [
           for (final t in _tabs)
             NavigationDestination(
-              icon: Icon(t.icon),
-              selectedIcon: Icon(t.active),
+              icon: t.route == Routes.scan
+                  ? const BrandMonogram(
+                      mark: BrandMark.snackSwap,
+                      size: 25,
+                    )
+                  : Icon(t.icon),
+              selectedIcon: t.route == Routes.scan
+                  ? const BrandMonogram(
+                      mark: BrandMark.snackSwap,
+                      size: 27,
+                    )
+                  : Icon(t.active),
               label: t.label,
             ),
         ],

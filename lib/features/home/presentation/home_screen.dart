@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:bitewise/core/branding/brand_marks.dart';
 import 'package:bitewise/core/router/app_router.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/home/presentation/widgets/macro_bar.dart';
@@ -24,7 +25,7 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dagboek'),
+        title: const BrandWordmark(),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),

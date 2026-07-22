@@ -36,7 +36,7 @@ class _SwapResultsScreenState extends ConsumerState<SwapResultsScreen> {
   Widget build(BuildContext context) {
     final events = ref.watch(_eventsProvider(_period));
     return Scaffold(
-      appBar: AppBar(title: const Text('Mijn swapresultaten')),
+      appBar: AppBar(title: const Text('Jouw swapresultaat')),
       backgroundColor: AppColors.cream,
       body: events.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -148,9 +148,15 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: AppColors.navy,
+            ),
+          ),
           Text(label,
               style: const TextStyle(fontSize: 11, color: AppColors.slate)),
         ]),

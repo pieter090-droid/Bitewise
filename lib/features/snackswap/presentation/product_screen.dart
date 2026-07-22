@@ -32,7 +32,7 @@ class ProductScreen extends ConsumerWidget {
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
-        title: const Text('Product'),
+        title: const Text('Scanresultaat'),
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -116,11 +116,16 @@ class _ProductBodyState extends ConsumerState<_ProductBody> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(p.name,
-                            style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.navy)),
+                        Text(
+                          p.name,
+                          style: const TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 26,
+                            height: 1.12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.navy,
+                          ),
+                        ),
                         if (p.brand != null && p.brand!.isNotEmpty)
                           Text(p.brand!,
                               style: const TextStyle(color: AppColors.slate)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:bitewise/core/branding/brand_marks.dart';
 import 'package:bitewise/core/router/app_router.dart';
 import 'package:bitewise/core/preferences/preferences_service.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
@@ -166,7 +167,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
-        title: const Text('Betere swaps'),
+        title: const BrandWordmark(mark: BrandMark.snackSwap, fontSize: 22),
         actions: [
           IconButton(
             tooltip: 'Mijn swapresultaten',
@@ -433,7 +434,7 @@ class _DayContextToggle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.mist),
       ),
       child: SwitchListTile.adaptive(
@@ -539,11 +540,15 @@ class _SwapCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            color: AppColors.navy)),
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        color: AppColors.navy,
+                      ),
+                    ),
                     if (item.brand != null && item.brand!.isNotEmpty)
                       Text(item.brand!,
                           style: const TextStyle(
@@ -675,7 +680,7 @@ class _ComparisonTable extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.cream,
-        borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.mist),
       ),
       child: Column(
