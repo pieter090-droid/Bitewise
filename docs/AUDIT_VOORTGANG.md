@@ -728,3 +728,16 @@
   latere `product_features_resolved`-rijen rechtstreeks op dezelfde
   fail-closed invarianten. De volledige matrix gebruikt 15.130 voortaan als
   ondergrens in plaats van een foutieve vaste eindtelling.
+- 2026-07-22, gebruikersfeedback en resultaatinzicht: iedere voorgestelde
+  swap toont nu een vergelijking met het gescande product. De vergelijking
+  gebruikt alleen portiewaarden als beide producten daarvoor complete
+  kerngegevens hebben en valt anders consequent terug op waarden per 100 g;
+  ontbrekende waarden blijven zichtbaar onbekend. Een gebruikte swap wordt
+  lokaal en transactioneel vastgelegd met een onveranderlijke snapshot van
+  beide producten en kan per dag, 7 dagen, 30 dagen of alle tijd worden
+  samengevat per doel. Alleen aantoonbare positieve kcal-/suikerbesparing en
+  eiwitwinst tellen mee. Feedback ondersteunt meerdere vaste redenen en een
+  optionele toelichting, zowel per suggestie als voor een hele resultaatlijst
+  zonder goede swap. De bestaande classificatie, kandidaatselectie en score
+  zijn niet gewijzigd. Migratie van de lokale Drift-database naar schema 4,
+  repositorytransacties en rekenregels zijn met gerichte tests afgedekt.

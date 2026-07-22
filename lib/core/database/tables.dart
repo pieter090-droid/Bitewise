@@ -19,10 +19,8 @@ class UserGoals extends Table {
   /// JSON-array van allergieën (bv. ["noten","lactose"]).
   TextColumn get allergiesJson => text().withDefault(const Constant('[]'))();
 
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Persoonlijke eetlogboeken per eetmoment. Blijft lokaal tenzij sync aan staat.
@@ -48,8 +46,7 @@ class DayLogs extends Table {
 
   /// Datum (zonder tijd) waarvoor het log telt.
   DateTimeColumn get logDate => dateTime()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   // --- Sync-velden (alleen relevant wanneer sync aan staat) ---
   /// Server-id (user_day_logs.id) na een geslaagde upload; anders null.
@@ -70,8 +67,7 @@ class CachedProducts extends Table {
   /// Volledige [Product] als JSON, zodat detail-scherm offline werkt.
   TextColumn get dataJson => text()();
 
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {barcode};
@@ -82,8 +78,7 @@ class CachedProducts extends Table {
 class FavoriteProducts extends Table {
   TextColumn get barcode => text()();
   TextColumn get name => text()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {barcode};
@@ -98,8 +93,7 @@ class Recipes extends Table {
 
   /// JSON-array van componenten (naam, barcode, gram + macro's per portie).
   TextColumn get itemsJson => text()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Lokale feedback op swap-aanbevelingen (duim omhoog/omlaag).
@@ -111,6 +105,36 @@ class SwapFeedbacks extends Table {
 
   /// true = duim omhoog, false = duim omlaag.
   BoolColumn get positive => boolean()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  TextColumn get goal => text().nullable()();
+  TextColumn get scope => text().withDefault(const Constant('suggestion'))();
+  TextColumn get reasonsJson => text().withDefault(const Constant('[]'))();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Snapshot van een werkelijk gebruikte swap. Historische winst blijft zo
+/// gelijk wanneer productdata later verandert.
+@DataClassName('SwapEventRow')
+class SwapEvents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get fromBarcode => text()();
+  TextColumn get fromName => text()();
+  TextColumn get toBarcode => text()();
+  TextColumn get toName => text()();
+  TextColumn get goal => text()();
+  TextColumn get basis => text()(); // serving | per100g
+  RealColumn get fromAmount => real()();
+  RealColumn get toAmount => real()();
+  RealColumn get fromKcal => real().nullable()();
+  RealColumn get toKcal => real().nullable()();
+  RealColumn get fromSugar => real().nullable()();
+  RealColumn get toSugar => real().nullable()();
+  RealColumn get fromProtein => real().nullable()();
+  RealColumn get toProtein => real().nullable()();
+  RealColumn get fromFat => real().nullable()();
+  RealColumn get toFat => real().nullable()();
+  RealColumn get fromSalt => real().nullable()();
+  RealColumn get toSalt => real().nullable()();
+  DateTimeColumn get eventDate => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

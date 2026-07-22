@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:bitewise/core/preferences/preferences_service.dart';
+import 'package:bitewise/core/router/app_router.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/onboarding/data/user_goals_repository.dart';
 import 'package:bitewise/features/onboarding/domain/goal_type.dart';
@@ -40,6 +42,19 @@ class SettingsScreen extends ConsumerWidget {
               goal: goal ?? UserGoal.defaultsFor(GoalType.maintain),
               onEdit: () => _editGoal(context, ref,
                   goal ?? UserGoal.defaultsFor(GoalType.maintain)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const _SectionTitle('SnackSwap'),
+          Card(
+            child: ListTile(
+              leading:
+                  const Icon(Icons.insights_outlined, color: AppColors.navy),
+              title: const Text('Mijn swapresultaten'),
+              subtitle: const Text(
+                  'Bekijk bespaarde kcal, suiker en extra eiwit per periode.'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.swapResults),
             ),
           ),
           const SizedBox(height: 20),

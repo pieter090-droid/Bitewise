@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:bitewise/core/router/app_router.dart';
 import 'package:bitewise/core/preferences/preferences_service.dart';
 import 'package:bitewise/core/theme/app_colors.dart';
 import 'package:bitewise/features/snackswap/application/rule_based_swap_provider.dart';
-import 'package:bitewise/features/snackswap/application/swap_log_portion.dart';
+import 'package:bitewise/features/snackswap/data/swap_feedback_repository.dart';
+import 'package:bitewise/features/snackswap/data/swap_history_repository.dart';
+import 'package:bitewise/features/snackswap/domain/swap_comparison.dart';
 import 'package:bitewise/features/snackswap/domain/product_features.dart';
 import 'package:bitewise/features/snackswap/domain/swap_score_result.dart';
 import 'package:bitewise/features/sync/application/sync_coordinator.dart';
-import 'package:bitewise/features/tracker/data/day_logs_repository.dart';
 import 'package:bitewise/features/tracker/domain/meal_type.dart';
+import 'package:bitewise/features/snackswap/presentation/swap_feedback_sheet.dart';
 
 /// Nederlandse labels voor `snack_type` (zie `feature_vocabulary`), voor het
 /// categoriefilter. Onbekende/nieuwe waarden vallen terug op de ruwe waarde.
@@ -60,6 +64,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// Leeg = nog geen categorie gekozen. Meerdere `snack_type`-waarden
   /// tegelijk aan te vinken (bv. Zuivel + Fruit samen doorzoeken).
   final Set<String> _snackTypeFilters = {};
+  final Set<String> _loggingBarcodes = {};
 
   @override
   void initState() {
@@ -75,25 +80,56 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   /// Logt een gekozen swap direct in het daglog met één consistente
   /// voedingsgrondslag: betrouwbare portiedata, anders exact 100 gram.
-  Future<void> _logSwap(SwapScoreResult result) async {
+  Future<void> _logSwap(
+    SwapScoreResult result,
+    SwapCandidate source,
+    SwapGoal goal,
+  ) async {
     final item = result.candidate;
-    final portion = swapLogPortionFor(result);
+    if (_loggingBarcodes.contains(item.barcode)) return;
+    setState(() => _loggingBarcodes.add(item.barcode));
     final meal = MealType.suggestForNow();
-    await ref.read(dayLogsRepositoryProvider).logEntry(
-          barcode: item.barcode,
-          productName: item.name,
-          mealType: meal,
-          grams: portion.grams,
-          kcal: portion.kcal,
-          protein: portion.protein,
-          sugar: portion.sugar,
-          carbs: portion.carbs,
-          fat: portion.fat,
+    try {
+      await ref.read(swapHistoryRepositoryProvider).useSwap(
+            source: source,
+            result: result,
+            goal: goal,
+            meal: meal,
+          );
+      ref.read(syncCoordinatorProvider).onLogsChanged();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${item.name} gebruikt als swap')),
+      );
+    } finally {
+      if (mounted) setState(() => _loggingBarcodes.remove(item.barcode));
+    }
+  }
+
+  Future<void> _feedback({
+    required String sourceBarcode,
+    required SwapGoal goal,
+    SwapScoreResult? result,
+    required bool noGoodSwap,
+  }) async {
+    final input = await showSwapFeedbackSheet(
+      context,
+      title: noGoodSwap
+          ? 'Waarom zit er geen goede swap bij?'
+          : 'Wat is er niet goed aan deze swap?',
+    );
+    if (input == null) return;
+    await ref.read(swapFeedbackRepositoryProvider).save(
+          fromBarcode: sourceBarcode,
+          toBarcode: result?.candidate.barcode,
+          goal: goal,
+          reasons: input.reasons,
+          note: input.note,
+          noGoodSwap: noGoodSwap,
         );
-    ref.read(syncCoordinatorProvider).onLogsChanged();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.name} toegevoegd aan ${meal.label}')),
+      const SnackBar(content: Text('Bedankt, je feedback is opgeslagen.')),
     );
   }
 
@@ -105,6 +141,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.cream,
         title: const Text('Betere swaps'),
+        actions: [
+          IconButton(
+            tooltip: 'Mijn swapresultaten',
+            onPressed: () => context.push(Routes.swapResults),
+            icon: const Icon(Icons.insights_outlined),
+          ),
+        ],
       ),
       body: SafeArea(
         child: goal == null
@@ -138,13 +181,21 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                     ),
                   ),
                   data: (result) => switch (result) {
-                    RuleBasedSwapNotFound() => const _Info(
+                    RuleBasedSwapNotFound() => _Info(
                         icon: Icons.inbox_outlined,
                         title: 'Nog geen veilige swap',
-                        body:
-                            'We tonen alleen alternatieven die betrouwbaar '
+                        body: 'We tonen alleen alternatieven die betrouwbaar '
                             'vergelijkbaar zijn en bij je gekozen doel passen. '
                             'Voor dit product is die veilige match er nu niet.',
+                        action: TextButton.icon(
+                          onPressed: () => _feedback(
+                            sourceBarcode: widget.barcode,
+                            goal: goal,
+                            noGoodSwap: true,
+                          ),
+                          icon: const Icon(Icons.feedback_outlined),
+                          label: const Text('Vertel ons waarom'),
+                        ),
                       ),
                     RuleBasedSwapError() => const _Info(
                         icon: Icons.cloud_off,
@@ -216,7 +267,19 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         ),
         const SizedBox(height: 12),
         for (final group in groups)
-          _GroupSection(group: group, onLog: _logSwap),
+          _GroupSection(
+            group: group,
+            source: source,
+            goal: _selectedGoal!,
+            loggingBarcodes: _loggingBarcodes,
+            onLog: (result) => _logSwap(result, source, _selectedGoal!),
+            onFeedback: (result) => _feedback(
+              sourceBarcode: source.barcode,
+              goal: _selectedGoal!,
+              result: result,
+              noGoodSwap: false,
+            ),
+          ),
         if (sortedTypes.length > 1) ...[
           const Divider(height: 24),
           const Text('Extra alternatief zoeken',
@@ -251,8 +314,30 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             const Text('Niks gevonden in deze categorie(ën).',
                 style: TextStyle(color: AppColors.slate)),
           for (final group in extraGroups)
-            _GroupSection(group: group, onLog: _logSwap),
+            _GroupSection(
+              group: group,
+              source: source,
+              goal: _selectedGoal!,
+              loggingBarcodes: _loggingBarcodes,
+              onLog: (result) => _logSwap(result, source, _selectedGoal!),
+              onFeedback: (result) => _feedback(
+                sourceBarcode: source.barcode,
+                goal: _selectedGoal!,
+                result: result,
+                noGoodSwap: false,
+              ),
+            ),
         ],
+        const Divider(height: 28),
+        OutlinedButton.icon(
+          onPressed: () => _feedback(
+            sourceBarcode: source.barcode,
+            goal: _selectedGoal!,
+            noGoodSwap: true,
+          ),
+          icon: const Icon(Icons.feedback_outlined),
+          label: const Text('Geen goede swap gevonden'),
+        ),
       ],
     );
   }
@@ -346,9 +431,20 @@ class _DayContextToggle extends StatelessWidget {
 }
 
 class _GroupSection extends StatelessWidget {
-  const _GroupSection({required this.group, required this.onLog});
+  const _GroupSection({
+    required this.group,
+    required this.source,
+    required this.goal,
+    required this.loggingBarcodes,
+    required this.onLog,
+    required this.onFeedback,
+  });
   final SwapRecommendationGroup group;
+  final SwapCandidate source;
+  final SwapGoal goal;
+  final Set<String> loggingBarcodes;
   final void Function(SwapScoreResult result) onLog;
+  final void Function(SwapScoreResult result) onFeedback;
 
   @override
   Widget build(BuildContext context) {
@@ -364,7 +460,14 @@ class _GroupSection extends StatelessWidget {
                   color: AppColors.navy)),
           const SizedBox(height: 10),
           for (final result in group.results)
-            _SwapCard(result: result, onLog: () => onLog(result)),
+            _SwapCard(
+              source: source,
+              result: result,
+              goal: goal,
+              logging: loggingBarcodes.contains(result.candidate.barcode),
+              onLog: () => onLog(result),
+              onFeedback: () => onFeedback(result),
+            ),
         ],
       ),
     );
@@ -372,14 +475,26 @@ class _GroupSection extends StatelessWidget {
 }
 
 class _SwapCard extends StatelessWidget {
-  const _SwapCard({required this.result, required this.onLog});
+  const _SwapCard({
+    required this.source,
+    required this.result,
+    required this.goal,
+    required this.logging,
+    required this.onLog,
+    required this.onFeedback,
+  });
 
+  final SwapCandidate source;
   final SwapScoreResult result;
+  final SwapGoal goal;
+  final bool logging;
   final VoidCallback onLog;
+  final VoidCallback onFeedback;
 
   @override
   Widget build(BuildContext context) {
     final item = result.candidate;
+    final comparison = SwapComparison.forResult(source: source, result: result);
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -418,6 +533,13 @@ class _SwapCard extends StatelessWidget {
             Text(result.userReason ?? result.reasons.join(' · '),
                 style: const TextStyle(color: AppColors.ink, height: 1.35)),
           ],
+          const SizedBox(height: 12),
+          _ComparisonTable(
+            source: source,
+            candidate: item,
+            comparison: comparison,
+            goal: goal,
+          ),
           if (_hasNutrition) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -457,13 +579,25 @@ class _SwapCard extends StatelessWidget {
               ),
           ],
           const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton.icon(
-              onPressed: onLog,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Toevoegen aan log'),
-            ),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: onFeedback,
+                icon: const Icon(Icons.feedback_outlined, size: 18),
+                label: const Text('Feedback'),
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: logging ? null : onLog,
+                icon: logging
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check, size: 18),
+                label: const Text('Gebruik deze swap'),
+              ),
+            ],
           ),
         ],
       ),
@@ -491,6 +625,138 @@ class _SwapCard extends StatelessWidget {
 
   String _fmt(double v) =>
       v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+}
+
+class _ComparisonTable extends StatelessWidget {
+  const _ComparisonTable({
+    required this.source,
+    required this.candidate,
+    required this.comparison,
+    required this.goal,
+  });
+
+  final SwapCandidate source;
+  final SwapCandidate candidate;
+  final SwapComparison comparison;
+  final SwapGoal goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final basis = comparison.usesServingData ? 'per portie' : 'per 100 g';
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.mist),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Vergelijking $basis',
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: AppColors.navy)),
+          const SizedBox(height: 8),
+          Row(children: [
+            const SizedBox(width: 76),
+            Expanded(child: _name(source.name, 'Huidig')),
+            const SizedBox(width: 8),
+            Expanded(child: _name(candidate.name, 'Swap')),
+            const SizedBox(width: 58),
+          ]),
+          const Divider(),
+          _row('kcal', comparison.source.kcal, comparison.candidate.kcal,
+              comparison.kcalSaved,
+              highlight: goal == SwapGoal.minderKcal),
+          _row('Suiker', comparison.source.sugar, comparison.candidate.sugar,
+              comparison.sugarSaved,
+              unit: ' g', highlight: goal == SwapGoal.minderSuiker),
+          _row('Eiwit', comparison.source.protein, comparison.candidate.protein,
+              comparison.proteinGained,
+              unit: ' g', gain: true, highlight: goal == SwapGoal.meerEiwit),
+          _row('Vet', comparison.source.fat, comparison.candidate.fat,
+              comparison.fatSaved,
+              unit: ' g'),
+          _row('Zout', comparison.source.salt, comparison.candidate.salt,
+              comparison.saltSaved,
+              unit: ' g'),
+          if (!comparison.usesServingData)
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: Text(
+                'Portiedata is niet voor beide producten compleet; daarom vergelijken we eerlijk per 100 g.',
+                style: TextStyle(fontSize: 10, color: AppColors.slate),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _name(String value, String label) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(fontSize: 10, color: AppColors.slate)),
+          Text(value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+        ],
+      );
+
+  Widget _row(
+    String label,
+    double? before,
+    double? after,
+    double? difference, {
+    String unit = '',
+    bool gain = false,
+    bool highlight = false,
+  }) {
+    final positive = difference != null && difference > 0;
+    final diffLabel = difference == null
+        ? '—'
+        : difference == 0
+            ? '0$unit'
+            : gain
+                ? '${difference > 0 ? '+' : '−'}${_fmt(difference.abs())}$unit'
+                : '${difference > 0 ? '−' : '+'}${_fmt(difference.abs())}$unit';
+    return Container(
+      color: highlight ? AppColors.gold.withValues(alpha: 0.12) : null,
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(children: [
+        SizedBox(
+          width: 76,
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: highlight ? FontWeight.w800 : FontWeight.w600)),
+        ),
+        Expanded(child: Text(_value(before, unit))),
+        const SizedBox(width: 8),
+        Expanded(child: Text(_value(after, unit))),
+        SizedBox(
+          width: 58,
+          child: Text(
+            diffLabel,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: positive ? Colors.green.shade700 : AppColors.slate,
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  String _value(double? value, String unit) =>
+      value == null ? 'Onbekend' : '${_fmt(value)}$unit';
+  String _fmt(double value) => value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
 }
 
 class _ScoreBadge extends StatelessWidget {

@@ -13,6 +13,7 @@ part 'app_database.g.dart';
     CachedProducts,
     FavoriteProducts,
     SwapFeedbacks,
+    SwapEvents,
     Recipes,
   ],
 )
@@ -21,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? _defaultConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +39,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(dayLogs, dayLogs.fat);
             await m.addColumn(userGoals, userGoals.carbsTarget);
             await m.createTable(recipes);
+          }
+          if (from < 4) {
+            await m.addColumn(swapFeedbacks, swapFeedbacks.goal);
+            await m.addColumn(swapFeedbacks, swapFeedbacks.scope);
+            await m.addColumn(swapFeedbacks, swapFeedbacks.reasonsJson);
+            await m.addColumn(swapFeedbacks, swapFeedbacks.note);
+            await m.createTable(swapEvents);
           }
         },
       );

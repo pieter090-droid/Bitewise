@@ -78,5 +78,4 @@ class UserGoal {
       allergies: allergies ?? this.allergies,
     );
   }
-
 }

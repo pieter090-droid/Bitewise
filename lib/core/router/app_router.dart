@@ -13,6 +13,7 @@ import 'package:bitewise/features/shell/app_shell.dart';
 import 'package:bitewise/features/snackswap/presentation/product_screen.dart';
 import 'package:bitewise/features/snackswap/presentation/scan_screen.dart';
 import 'package:bitewise/features/snackswap/presentation/swap_screen.dart';
+import 'package:bitewise/features/snackswap/presentation/swap_results_screen.dart';
 
 /// Route-paden centraal.
 abstract final class Routes {
@@ -25,6 +26,7 @@ abstract final class Routes {
   static const cameraPick = '/camera-pick';
   static const pick = '/pick';
   static const recipeBuilder = '/recipe/new';
+  static const swapResults = '/swap-results';
 
   static String product(String barcode) => '/product/$barcode';
   static String swap(String barcode) => '/swap/$barcode';
@@ -93,6 +95,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         path: Routes.recipeBuilder,
         builder: (context, state) => const RecipeBuilderScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootKey,
+        path: Routes.swapResults,
+        builder: (context, state) => const SwapResultsScreen(),
       ),
       GoRoute(
         parentNavigatorKey: _rootKey,

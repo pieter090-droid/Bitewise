@@ -97,8 +97,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 24),
-          Text('Eetmomenten',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text('Eetmomenten', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           for (final meal in MealType.values)
             MealSection(meal: meal, logs: logsByMeal[meal] ?? const []),
@@ -116,8 +115,18 @@ class _DateNavigator extends StatelessWidget {
 
   static const _days = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
   static const _months = [
-    'jan', 'feb', 'mrt', 'apr', 'mei', 'jun',
-    'jul', 'aug', 'sep', 'okt', 'nov', 'dec'
+    'jan',
+    'feb',
+    'mrt',
+    'apr',
+    'mei',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'okt',
+    'nov',
+    'dec'
   ];
 
   String _label() {
@@ -206,7 +215,8 @@ class _DayHeaderCard extends StatelessWidget {
                         : '${remaining.abs()} kcal boven doel',
                     style: TextStyle(
                       fontSize: 15,
-                      color: remaining >= 0 ? AppColors.slate : AppColors.danger,
+                      color:
+                          remaining >= 0 ? AppColors.slate : AppColors.danger,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

@@ -93,7 +93,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     flex: 2,
                     child: ElevatedButton(
                       onPressed: _next,
-                      child: Text(_page == _lastPage ? 'Aan de slag' : 'Volgende'),
+                      child:
+                          Text(_page == _lastPage ? 'Aan de slag' : 'Volgende'),
                     ),
                   ),
                 ],
@@ -176,8 +177,7 @@ class _TargetsStep extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Je dagdoelen',
-            style: Theme.of(context).textTheme.headlineSmall),
+        Text('Je dagdoelen', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 4),
         const Text('Pas gerust aan, of laat ze berekenen.',
             style: TextStyle(color: AppColors.slate)),
@@ -253,8 +253,7 @@ class _PreferencesStep extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Voorkeuren',
-            style: Theme.of(context).textTheme.headlineSmall),
+        Text('Voorkeuren', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,

@@ -92,7 +92,8 @@ class _ProductBodyState extends ConsumerState<_ProductBody> {
     ref.read(syncCoordinatorProvider).onLogsChanged();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${widget.product.name} gelogd bij ${_meal.label}')),
+      SnackBar(
+          content: Text('${widget.product.name} gelogd bij ${_meal.label}')),
     );
     context.go(Routes.home);
   }
@@ -230,8 +231,8 @@ class _PortionCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text('Eetmoment',
-              style:
-                  TextStyle(fontWeight: FontWeight.w700, color: AppColors.navy)),
+              style: TextStyle(
+                  fontWeight: FontWeight.w700, color: AppColors.navy)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,

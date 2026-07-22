@@ -1821,6 +1821,31 @@ class $SwapFeedbacksTable extends SwapFeedbacks
       requiredDuringInsert: true,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("positive" IN (0, 1))'));
+  static const VerificationMeta _goalMeta = const VerificationMeta('goal');
+  @override
+  late final GeneratedColumn<String> goal = GeneratedColumn<String>(
+      'goal', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
+  @override
+  late final GeneratedColumn<String> scope = GeneratedColumn<String>(
+      'scope', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('suggestion'));
+  static const VerificationMeta _reasonsJsonMeta =
+      const VerificationMeta('reasonsJson');
+  @override
+  late final GeneratedColumn<String> reasonsJson = GeneratedColumn<String>(
+      'reasons_json', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+      'note', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1830,8 +1855,17 @@ class $SwapFeedbacksTable extends SwapFeedbacks
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, fromBarcode, toBarcode, positive, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        fromBarcode,
+        toBarcode,
+        positive,
+        goal,
+        scope,
+        reasonsJson,
+        note,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1865,6 +1899,24 @@ class $SwapFeedbacksTable extends SwapFeedbacks
     } else if (isInserting) {
       context.missing(_positiveMeta);
     }
+    if (data.containsKey('goal')) {
+      context.handle(
+          _goalMeta, goal.isAcceptableOrUnknown(data['goal']!, _goalMeta));
+    }
+    if (data.containsKey('scope')) {
+      context.handle(
+          _scopeMeta, scope.isAcceptableOrUnknown(data['scope']!, _scopeMeta));
+    }
+    if (data.containsKey('reasons_json')) {
+      context.handle(
+          _reasonsJsonMeta,
+          reasonsJson.isAcceptableOrUnknown(
+              data['reasons_json']!, _reasonsJsonMeta));
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+          _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -1886,6 +1938,14 @@ class $SwapFeedbacksTable extends SwapFeedbacks
           .read(DriftSqlType.string, data['${effectivePrefix}to_barcode'])!,
       positive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}positive'])!,
+      goal: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}goal']),
+      scope: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}scope'])!,
+      reasonsJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reasons_json'])!,
+      note: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}note']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -1904,12 +1964,20 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
 
   /// true = duim omhoog, false = duim omlaag.
   final bool positive;
+  final String? goal;
+  final String scope;
+  final String reasonsJson;
+  final String? note;
   final DateTime createdAt;
   const SwapFeedbackRow(
       {required this.id,
       required this.fromBarcode,
       required this.toBarcode,
       required this.positive,
+      this.goal,
+      required this.scope,
+      required this.reasonsJson,
+      this.note,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1918,6 +1986,14 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
     map['from_barcode'] = Variable<String>(fromBarcode);
     map['to_barcode'] = Variable<String>(toBarcode);
     map['positive'] = Variable<bool>(positive);
+    if (!nullToAbsent || goal != null) {
+      map['goal'] = Variable<String>(goal);
+    }
+    map['scope'] = Variable<String>(scope);
+    map['reasons_json'] = Variable<String>(reasonsJson);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1928,6 +2004,10 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
       fromBarcode: Value(fromBarcode),
       toBarcode: Value(toBarcode),
       positive: Value(positive),
+      goal: goal == null && nullToAbsent ? const Value.absent() : Value(goal),
+      scope: Value(scope),
+      reasonsJson: Value(reasonsJson),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       createdAt: Value(createdAt),
     );
   }
@@ -1940,6 +2020,10 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
       fromBarcode: serializer.fromJson<String>(json['fromBarcode']),
       toBarcode: serializer.fromJson<String>(json['toBarcode']),
       positive: serializer.fromJson<bool>(json['positive']),
+      goal: serializer.fromJson<String?>(json['goal']),
+      scope: serializer.fromJson<String>(json['scope']),
+      reasonsJson: serializer.fromJson<String>(json['reasonsJson']),
+      note: serializer.fromJson<String?>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1951,6 +2035,10 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
       'fromBarcode': serializer.toJson<String>(fromBarcode),
       'toBarcode': serializer.toJson<String>(toBarcode),
       'positive': serializer.toJson<bool>(positive),
+      'goal': serializer.toJson<String?>(goal),
+      'scope': serializer.toJson<String>(scope),
+      'reasonsJson': serializer.toJson<String>(reasonsJson),
+      'note': serializer.toJson<String?>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1960,12 +2048,20 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
           String? fromBarcode,
           String? toBarcode,
           bool? positive,
+          Value<String?> goal = const Value.absent(),
+          String? scope,
+          String? reasonsJson,
+          Value<String?> note = const Value.absent(),
           DateTime? createdAt}) =>
       SwapFeedbackRow(
         id: id ?? this.id,
         fromBarcode: fromBarcode ?? this.fromBarcode,
         toBarcode: toBarcode ?? this.toBarcode,
         positive: positive ?? this.positive,
+        goal: goal.present ? goal.value : this.goal,
+        scope: scope ?? this.scope,
+        reasonsJson: reasonsJson ?? this.reasonsJson,
+        note: note.present ? note.value : this.note,
         createdAt: createdAt ?? this.createdAt,
       );
   SwapFeedbackRow copyWithCompanion(SwapFeedbacksCompanion data) {
@@ -1975,6 +2071,11 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
           data.fromBarcode.present ? data.fromBarcode.value : this.fromBarcode,
       toBarcode: data.toBarcode.present ? data.toBarcode.value : this.toBarcode,
       positive: data.positive.present ? data.positive.value : this.positive,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      scope: data.scope.present ? data.scope.value : this.scope,
+      reasonsJson:
+          data.reasonsJson.present ? data.reasonsJson.value : this.reasonsJson,
+      note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1986,14 +2087,18 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
           ..write('fromBarcode: $fromBarcode, ')
           ..write('toBarcode: $toBarcode, ')
           ..write('positive: $positive, ')
+          ..write('goal: $goal, ')
+          ..write('scope: $scope, ')
+          ..write('reasonsJson: $reasonsJson, ')
+          ..write('note: $note, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, fromBarcode, toBarcode, positive, createdAt);
+  int get hashCode => Object.hash(id, fromBarcode, toBarcode, positive, goal,
+      scope, reasonsJson, note, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2002,6 +2107,10 @@ class SwapFeedbackRow extends DataClass implements Insertable<SwapFeedbackRow> {
           other.fromBarcode == this.fromBarcode &&
           other.toBarcode == this.toBarcode &&
           other.positive == this.positive &&
+          other.goal == this.goal &&
+          other.scope == this.scope &&
+          other.reasonsJson == this.reasonsJson &&
+          other.note == this.note &&
           other.createdAt == this.createdAt);
 }
 
@@ -2010,12 +2119,20 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
   final Value<String> fromBarcode;
   final Value<String> toBarcode;
   final Value<bool> positive;
+  final Value<String?> goal;
+  final Value<String> scope;
+  final Value<String> reasonsJson;
+  final Value<String?> note;
   final Value<DateTime> createdAt;
   const SwapFeedbacksCompanion({
     this.id = const Value.absent(),
     this.fromBarcode = const Value.absent(),
     this.toBarcode = const Value.absent(),
     this.positive = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.reasonsJson = const Value.absent(),
+    this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   SwapFeedbacksCompanion.insert({
@@ -2023,6 +2140,10 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
     required String fromBarcode,
     required String toBarcode,
     required bool positive,
+    this.goal = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.reasonsJson = const Value.absent(),
+    this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : fromBarcode = Value(fromBarcode),
         toBarcode = Value(toBarcode),
@@ -2032,6 +2153,10 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
     Expression<String>? fromBarcode,
     Expression<String>? toBarcode,
     Expression<bool>? positive,
+    Expression<String>? goal,
+    Expression<String>? scope,
+    Expression<String>? reasonsJson,
+    Expression<String>? note,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -2039,6 +2164,10 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
       if (fromBarcode != null) 'from_barcode': fromBarcode,
       if (toBarcode != null) 'to_barcode': toBarcode,
       if (positive != null) 'positive': positive,
+      if (goal != null) 'goal': goal,
+      if (scope != null) 'scope': scope,
+      if (reasonsJson != null) 'reasons_json': reasonsJson,
+      if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -2048,12 +2177,20 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
       Value<String>? fromBarcode,
       Value<String>? toBarcode,
       Value<bool>? positive,
+      Value<String?>? goal,
+      Value<String>? scope,
+      Value<String>? reasonsJson,
+      Value<String?>? note,
       Value<DateTime>? createdAt}) {
     return SwapFeedbacksCompanion(
       id: id ?? this.id,
       fromBarcode: fromBarcode ?? this.fromBarcode,
       toBarcode: toBarcode ?? this.toBarcode,
       positive: positive ?? this.positive,
+      goal: goal ?? this.goal,
+      scope: scope ?? this.scope,
+      reasonsJson: reasonsJson ?? this.reasonsJson,
+      note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -2073,6 +2210,18 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
     if (positive.present) {
       map['positive'] = Variable<bool>(positive.value);
     }
+    if (goal.present) {
+      map['goal'] = Variable<String>(goal.value);
+    }
+    if (scope.present) {
+      map['scope'] = Variable<String>(scope.value);
+    }
+    if (reasonsJson.present) {
+      map['reasons_json'] = Variable<String>(reasonsJson.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2086,6 +2235,953 @@ class SwapFeedbacksCompanion extends UpdateCompanion<SwapFeedbackRow> {
           ..write('fromBarcode: $fromBarcode, ')
           ..write('toBarcode: $toBarcode, ')
           ..write('positive: $positive, ')
+          ..write('goal: $goal, ')
+          ..write('scope: $scope, ')
+          ..write('reasonsJson: $reasonsJson, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SwapEventsTable extends SwapEvents
+    with TableInfo<$SwapEventsTable, SwapEventRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SwapEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _fromBarcodeMeta =
+      const VerificationMeta('fromBarcode');
+  @override
+  late final GeneratedColumn<String> fromBarcode = GeneratedColumn<String>(
+      'from_barcode', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fromNameMeta =
+      const VerificationMeta('fromName');
+  @override
+  late final GeneratedColumn<String> fromName = GeneratedColumn<String>(
+      'from_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _toBarcodeMeta =
+      const VerificationMeta('toBarcode');
+  @override
+  late final GeneratedColumn<String> toBarcode = GeneratedColumn<String>(
+      'to_barcode', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _toNameMeta = const VerificationMeta('toName');
+  @override
+  late final GeneratedColumn<String> toName = GeneratedColumn<String>(
+      'to_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _goalMeta = const VerificationMeta('goal');
+  @override
+  late final GeneratedColumn<String> goal = GeneratedColumn<String>(
+      'goal', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _basisMeta = const VerificationMeta('basis');
+  @override
+  late final GeneratedColumn<String> basis = GeneratedColumn<String>(
+      'basis', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fromAmountMeta =
+      const VerificationMeta('fromAmount');
+  @override
+  late final GeneratedColumn<double> fromAmount = GeneratedColumn<double>(
+      'from_amount', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _toAmountMeta =
+      const VerificationMeta('toAmount');
+  @override
+  late final GeneratedColumn<double> toAmount = GeneratedColumn<double>(
+      'to_amount', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _fromKcalMeta =
+      const VerificationMeta('fromKcal');
+  @override
+  late final GeneratedColumn<double> fromKcal = GeneratedColumn<double>(
+      'from_kcal', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _toKcalMeta = const VerificationMeta('toKcal');
+  @override
+  late final GeneratedColumn<double> toKcal = GeneratedColumn<double>(
+      'to_kcal', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _fromSugarMeta =
+      const VerificationMeta('fromSugar');
+  @override
+  late final GeneratedColumn<double> fromSugar = GeneratedColumn<double>(
+      'from_sugar', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _toSugarMeta =
+      const VerificationMeta('toSugar');
+  @override
+  late final GeneratedColumn<double> toSugar = GeneratedColumn<double>(
+      'to_sugar', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _fromProteinMeta =
+      const VerificationMeta('fromProtein');
+  @override
+  late final GeneratedColumn<double> fromProtein = GeneratedColumn<double>(
+      'from_protein', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _toProteinMeta =
+      const VerificationMeta('toProtein');
+  @override
+  late final GeneratedColumn<double> toProtein = GeneratedColumn<double>(
+      'to_protein', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _fromFatMeta =
+      const VerificationMeta('fromFat');
+  @override
+  late final GeneratedColumn<double> fromFat = GeneratedColumn<double>(
+      'from_fat', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _toFatMeta = const VerificationMeta('toFat');
+  @override
+  late final GeneratedColumn<double> toFat = GeneratedColumn<double>(
+      'to_fat', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _fromSaltMeta =
+      const VerificationMeta('fromSalt');
+  @override
+  late final GeneratedColumn<double> fromSalt = GeneratedColumn<double>(
+      'from_salt', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _toSaltMeta = const VerificationMeta('toSalt');
+  @override
+  late final GeneratedColumn<double> toSalt = GeneratedColumn<double>(
+      'to_salt', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _eventDateMeta =
+      const VerificationMeta('eventDate');
+  @override
+  late final GeneratedColumn<DateTime> eventDate = GeneratedColumn<DateTime>(
+      'event_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        fromBarcode,
+        fromName,
+        toBarcode,
+        toName,
+        goal,
+        basis,
+        fromAmount,
+        toAmount,
+        fromKcal,
+        toKcal,
+        fromSugar,
+        toSugar,
+        fromProtein,
+        toProtein,
+        fromFat,
+        toFat,
+        fromSalt,
+        toSalt,
+        eventDate,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'swap_events';
+  @override
+  VerificationContext validateIntegrity(Insertable<SwapEventRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('from_barcode')) {
+      context.handle(
+          _fromBarcodeMeta,
+          fromBarcode.isAcceptableOrUnknown(
+              data['from_barcode']!, _fromBarcodeMeta));
+    } else if (isInserting) {
+      context.missing(_fromBarcodeMeta);
+    }
+    if (data.containsKey('from_name')) {
+      context.handle(_fromNameMeta,
+          fromName.isAcceptableOrUnknown(data['from_name']!, _fromNameMeta));
+    } else if (isInserting) {
+      context.missing(_fromNameMeta);
+    }
+    if (data.containsKey('to_barcode')) {
+      context.handle(_toBarcodeMeta,
+          toBarcode.isAcceptableOrUnknown(data['to_barcode']!, _toBarcodeMeta));
+    } else if (isInserting) {
+      context.missing(_toBarcodeMeta);
+    }
+    if (data.containsKey('to_name')) {
+      context.handle(_toNameMeta,
+          toName.isAcceptableOrUnknown(data['to_name']!, _toNameMeta));
+    } else if (isInserting) {
+      context.missing(_toNameMeta);
+    }
+    if (data.containsKey('goal')) {
+      context.handle(
+          _goalMeta, goal.isAcceptableOrUnknown(data['goal']!, _goalMeta));
+    } else if (isInserting) {
+      context.missing(_goalMeta);
+    }
+    if (data.containsKey('basis')) {
+      context.handle(
+          _basisMeta, basis.isAcceptableOrUnknown(data['basis']!, _basisMeta));
+    } else if (isInserting) {
+      context.missing(_basisMeta);
+    }
+    if (data.containsKey('from_amount')) {
+      context.handle(
+          _fromAmountMeta,
+          fromAmount.isAcceptableOrUnknown(
+              data['from_amount']!, _fromAmountMeta));
+    } else if (isInserting) {
+      context.missing(_fromAmountMeta);
+    }
+    if (data.containsKey('to_amount')) {
+      context.handle(_toAmountMeta,
+          toAmount.isAcceptableOrUnknown(data['to_amount']!, _toAmountMeta));
+    } else if (isInserting) {
+      context.missing(_toAmountMeta);
+    }
+    if (data.containsKey('from_kcal')) {
+      context.handle(_fromKcalMeta,
+          fromKcal.isAcceptableOrUnknown(data['from_kcal']!, _fromKcalMeta));
+    }
+    if (data.containsKey('to_kcal')) {
+      context.handle(_toKcalMeta,
+          toKcal.isAcceptableOrUnknown(data['to_kcal']!, _toKcalMeta));
+    }
+    if (data.containsKey('from_sugar')) {
+      context.handle(_fromSugarMeta,
+          fromSugar.isAcceptableOrUnknown(data['from_sugar']!, _fromSugarMeta));
+    }
+    if (data.containsKey('to_sugar')) {
+      context.handle(_toSugarMeta,
+          toSugar.isAcceptableOrUnknown(data['to_sugar']!, _toSugarMeta));
+    }
+    if (data.containsKey('from_protein')) {
+      context.handle(
+          _fromProteinMeta,
+          fromProtein.isAcceptableOrUnknown(
+              data['from_protein']!, _fromProteinMeta));
+    }
+    if (data.containsKey('to_protein')) {
+      context.handle(_toProteinMeta,
+          toProtein.isAcceptableOrUnknown(data['to_protein']!, _toProteinMeta));
+    }
+    if (data.containsKey('from_fat')) {
+      context.handle(_fromFatMeta,
+          fromFat.isAcceptableOrUnknown(data['from_fat']!, _fromFatMeta));
+    }
+    if (data.containsKey('to_fat')) {
+      context.handle(
+          _toFatMeta, toFat.isAcceptableOrUnknown(data['to_fat']!, _toFatMeta));
+    }
+    if (data.containsKey('from_salt')) {
+      context.handle(_fromSaltMeta,
+          fromSalt.isAcceptableOrUnknown(data['from_salt']!, _fromSaltMeta));
+    }
+    if (data.containsKey('to_salt')) {
+      context.handle(_toSaltMeta,
+          toSalt.isAcceptableOrUnknown(data['to_salt']!, _toSaltMeta));
+    }
+    if (data.containsKey('event_date')) {
+      context.handle(_eventDateMeta,
+          eventDate.isAcceptableOrUnknown(data['event_date']!, _eventDateMeta));
+    } else if (isInserting) {
+      context.missing(_eventDateMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SwapEventRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SwapEventRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      fromBarcode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}from_barcode'])!,
+      fromName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}from_name'])!,
+      toBarcode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}to_barcode'])!,
+      toName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}to_name'])!,
+      goal: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}goal'])!,
+      basis: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}basis'])!,
+      fromAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}from_amount'])!,
+      toAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}to_amount'])!,
+      fromKcal: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}from_kcal']),
+      toKcal: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}to_kcal']),
+      fromSugar: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}from_sugar']),
+      toSugar: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}to_sugar']),
+      fromProtein: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}from_protein']),
+      toProtein: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}to_protein']),
+      fromFat: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}from_fat']),
+      toFat: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}to_fat']),
+      fromSalt: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}from_salt']),
+      toSalt: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}to_salt']),
+      eventDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}event_date'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $SwapEventsTable createAlias(String alias) {
+    return $SwapEventsTable(attachedDatabase, alias);
+  }
+}
+
+class SwapEventRow extends DataClass implements Insertable<SwapEventRow> {
+  final int id;
+  final String fromBarcode;
+  final String fromName;
+  final String toBarcode;
+  final String toName;
+  final String goal;
+  final String basis;
+  final double fromAmount;
+  final double toAmount;
+  final double? fromKcal;
+  final double? toKcal;
+  final double? fromSugar;
+  final double? toSugar;
+  final double? fromProtein;
+  final double? toProtein;
+  final double? fromFat;
+  final double? toFat;
+  final double? fromSalt;
+  final double? toSalt;
+  final DateTime eventDate;
+  final DateTime createdAt;
+  const SwapEventRow(
+      {required this.id,
+      required this.fromBarcode,
+      required this.fromName,
+      required this.toBarcode,
+      required this.toName,
+      required this.goal,
+      required this.basis,
+      required this.fromAmount,
+      required this.toAmount,
+      this.fromKcal,
+      this.toKcal,
+      this.fromSugar,
+      this.toSugar,
+      this.fromProtein,
+      this.toProtein,
+      this.fromFat,
+      this.toFat,
+      this.fromSalt,
+      this.toSalt,
+      required this.eventDate,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['from_barcode'] = Variable<String>(fromBarcode);
+    map['from_name'] = Variable<String>(fromName);
+    map['to_barcode'] = Variable<String>(toBarcode);
+    map['to_name'] = Variable<String>(toName);
+    map['goal'] = Variable<String>(goal);
+    map['basis'] = Variable<String>(basis);
+    map['from_amount'] = Variable<double>(fromAmount);
+    map['to_amount'] = Variable<double>(toAmount);
+    if (!nullToAbsent || fromKcal != null) {
+      map['from_kcal'] = Variable<double>(fromKcal);
+    }
+    if (!nullToAbsent || toKcal != null) {
+      map['to_kcal'] = Variable<double>(toKcal);
+    }
+    if (!nullToAbsent || fromSugar != null) {
+      map['from_sugar'] = Variable<double>(fromSugar);
+    }
+    if (!nullToAbsent || toSugar != null) {
+      map['to_sugar'] = Variable<double>(toSugar);
+    }
+    if (!nullToAbsent || fromProtein != null) {
+      map['from_protein'] = Variable<double>(fromProtein);
+    }
+    if (!nullToAbsent || toProtein != null) {
+      map['to_protein'] = Variable<double>(toProtein);
+    }
+    if (!nullToAbsent || fromFat != null) {
+      map['from_fat'] = Variable<double>(fromFat);
+    }
+    if (!nullToAbsent || toFat != null) {
+      map['to_fat'] = Variable<double>(toFat);
+    }
+    if (!nullToAbsent || fromSalt != null) {
+      map['from_salt'] = Variable<double>(fromSalt);
+    }
+    if (!nullToAbsent || toSalt != null) {
+      map['to_salt'] = Variable<double>(toSalt);
+    }
+    map['event_date'] = Variable<DateTime>(eventDate);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SwapEventsCompanion toCompanion(bool nullToAbsent) {
+    return SwapEventsCompanion(
+      id: Value(id),
+      fromBarcode: Value(fromBarcode),
+      fromName: Value(fromName),
+      toBarcode: Value(toBarcode),
+      toName: Value(toName),
+      goal: Value(goal),
+      basis: Value(basis),
+      fromAmount: Value(fromAmount),
+      toAmount: Value(toAmount),
+      fromKcal: fromKcal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fromKcal),
+      toKcal:
+          toKcal == null && nullToAbsent ? const Value.absent() : Value(toKcal),
+      fromSugar: fromSugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fromSugar),
+      toSugar: toSugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toSugar),
+      fromProtein: fromProtein == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fromProtein),
+      toProtein: toProtein == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toProtein),
+      fromFat: fromFat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fromFat),
+      toFat:
+          toFat == null && nullToAbsent ? const Value.absent() : Value(toFat),
+      fromSalt: fromSalt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fromSalt),
+      toSalt:
+          toSalt == null && nullToAbsent ? const Value.absent() : Value(toSalt),
+      eventDate: Value(eventDate),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SwapEventRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SwapEventRow(
+      id: serializer.fromJson<int>(json['id']),
+      fromBarcode: serializer.fromJson<String>(json['fromBarcode']),
+      fromName: serializer.fromJson<String>(json['fromName']),
+      toBarcode: serializer.fromJson<String>(json['toBarcode']),
+      toName: serializer.fromJson<String>(json['toName']),
+      goal: serializer.fromJson<String>(json['goal']),
+      basis: serializer.fromJson<String>(json['basis']),
+      fromAmount: serializer.fromJson<double>(json['fromAmount']),
+      toAmount: serializer.fromJson<double>(json['toAmount']),
+      fromKcal: serializer.fromJson<double?>(json['fromKcal']),
+      toKcal: serializer.fromJson<double?>(json['toKcal']),
+      fromSugar: serializer.fromJson<double?>(json['fromSugar']),
+      toSugar: serializer.fromJson<double?>(json['toSugar']),
+      fromProtein: serializer.fromJson<double?>(json['fromProtein']),
+      toProtein: serializer.fromJson<double?>(json['toProtein']),
+      fromFat: serializer.fromJson<double?>(json['fromFat']),
+      toFat: serializer.fromJson<double?>(json['toFat']),
+      fromSalt: serializer.fromJson<double?>(json['fromSalt']),
+      toSalt: serializer.fromJson<double?>(json['toSalt']),
+      eventDate: serializer.fromJson<DateTime>(json['eventDate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'fromBarcode': serializer.toJson<String>(fromBarcode),
+      'fromName': serializer.toJson<String>(fromName),
+      'toBarcode': serializer.toJson<String>(toBarcode),
+      'toName': serializer.toJson<String>(toName),
+      'goal': serializer.toJson<String>(goal),
+      'basis': serializer.toJson<String>(basis),
+      'fromAmount': serializer.toJson<double>(fromAmount),
+      'toAmount': serializer.toJson<double>(toAmount),
+      'fromKcal': serializer.toJson<double?>(fromKcal),
+      'toKcal': serializer.toJson<double?>(toKcal),
+      'fromSugar': serializer.toJson<double?>(fromSugar),
+      'toSugar': serializer.toJson<double?>(toSugar),
+      'fromProtein': serializer.toJson<double?>(fromProtein),
+      'toProtein': serializer.toJson<double?>(toProtein),
+      'fromFat': serializer.toJson<double?>(fromFat),
+      'toFat': serializer.toJson<double?>(toFat),
+      'fromSalt': serializer.toJson<double?>(fromSalt),
+      'toSalt': serializer.toJson<double?>(toSalt),
+      'eventDate': serializer.toJson<DateTime>(eventDate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SwapEventRow copyWith(
+          {int? id,
+          String? fromBarcode,
+          String? fromName,
+          String? toBarcode,
+          String? toName,
+          String? goal,
+          String? basis,
+          double? fromAmount,
+          double? toAmount,
+          Value<double?> fromKcal = const Value.absent(),
+          Value<double?> toKcal = const Value.absent(),
+          Value<double?> fromSugar = const Value.absent(),
+          Value<double?> toSugar = const Value.absent(),
+          Value<double?> fromProtein = const Value.absent(),
+          Value<double?> toProtein = const Value.absent(),
+          Value<double?> fromFat = const Value.absent(),
+          Value<double?> toFat = const Value.absent(),
+          Value<double?> fromSalt = const Value.absent(),
+          Value<double?> toSalt = const Value.absent(),
+          DateTime? eventDate,
+          DateTime? createdAt}) =>
+      SwapEventRow(
+        id: id ?? this.id,
+        fromBarcode: fromBarcode ?? this.fromBarcode,
+        fromName: fromName ?? this.fromName,
+        toBarcode: toBarcode ?? this.toBarcode,
+        toName: toName ?? this.toName,
+        goal: goal ?? this.goal,
+        basis: basis ?? this.basis,
+        fromAmount: fromAmount ?? this.fromAmount,
+        toAmount: toAmount ?? this.toAmount,
+        fromKcal: fromKcal.present ? fromKcal.value : this.fromKcal,
+        toKcal: toKcal.present ? toKcal.value : this.toKcal,
+        fromSugar: fromSugar.present ? fromSugar.value : this.fromSugar,
+        toSugar: toSugar.present ? toSugar.value : this.toSugar,
+        fromProtein: fromProtein.present ? fromProtein.value : this.fromProtein,
+        toProtein: toProtein.present ? toProtein.value : this.toProtein,
+        fromFat: fromFat.present ? fromFat.value : this.fromFat,
+        toFat: toFat.present ? toFat.value : this.toFat,
+        fromSalt: fromSalt.present ? fromSalt.value : this.fromSalt,
+        toSalt: toSalt.present ? toSalt.value : this.toSalt,
+        eventDate: eventDate ?? this.eventDate,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  SwapEventRow copyWithCompanion(SwapEventsCompanion data) {
+    return SwapEventRow(
+      id: data.id.present ? data.id.value : this.id,
+      fromBarcode:
+          data.fromBarcode.present ? data.fromBarcode.value : this.fromBarcode,
+      fromName: data.fromName.present ? data.fromName.value : this.fromName,
+      toBarcode: data.toBarcode.present ? data.toBarcode.value : this.toBarcode,
+      toName: data.toName.present ? data.toName.value : this.toName,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      basis: data.basis.present ? data.basis.value : this.basis,
+      fromAmount:
+          data.fromAmount.present ? data.fromAmount.value : this.fromAmount,
+      toAmount: data.toAmount.present ? data.toAmount.value : this.toAmount,
+      fromKcal: data.fromKcal.present ? data.fromKcal.value : this.fromKcal,
+      toKcal: data.toKcal.present ? data.toKcal.value : this.toKcal,
+      fromSugar: data.fromSugar.present ? data.fromSugar.value : this.fromSugar,
+      toSugar: data.toSugar.present ? data.toSugar.value : this.toSugar,
+      fromProtein:
+          data.fromProtein.present ? data.fromProtein.value : this.fromProtein,
+      toProtein: data.toProtein.present ? data.toProtein.value : this.toProtein,
+      fromFat: data.fromFat.present ? data.fromFat.value : this.fromFat,
+      toFat: data.toFat.present ? data.toFat.value : this.toFat,
+      fromSalt: data.fromSalt.present ? data.fromSalt.value : this.fromSalt,
+      toSalt: data.toSalt.present ? data.toSalt.value : this.toSalt,
+      eventDate: data.eventDate.present ? data.eventDate.value : this.eventDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SwapEventRow(')
+          ..write('id: $id, ')
+          ..write('fromBarcode: $fromBarcode, ')
+          ..write('fromName: $fromName, ')
+          ..write('toBarcode: $toBarcode, ')
+          ..write('toName: $toName, ')
+          ..write('goal: $goal, ')
+          ..write('basis: $basis, ')
+          ..write('fromAmount: $fromAmount, ')
+          ..write('toAmount: $toAmount, ')
+          ..write('fromKcal: $fromKcal, ')
+          ..write('toKcal: $toKcal, ')
+          ..write('fromSugar: $fromSugar, ')
+          ..write('toSugar: $toSugar, ')
+          ..write('fromProtein: $fromProtein, ')
+          ..write('toProtein: $toProtein, ')
+          ..write('fromFat: $fromFat, ')
+          ..write('toFat: $toFat, ')
+          ..write('fromSalt: $fromSalt, ')
+          ..write('toSalt: $toSalt, ')
+          ..write('eventDate: $eventDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        fromBarcode,
+        fromName,
+        toBarcode,
+        toName,
+        goal,
+        basis,
+        fromAmount,
+        toAmount,
+        fromKcal,
+        toKcal,
+        fromSugar,
+        toSugar,
+        fromProtein,
+        toProtein,
+        fromFat,
+        toFat,
+        fromSalt,
+        toSalt,
+        eventDate,
+        createdAt
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SwapEventRow &&
+          other.id == this.id &&
+          other.fromBarcode == this.fromBarcode &&
+          other.fromName == this.fromName &&
+          other.toBarcode == this.toBarcode &&
+          other.toName == this.toName &&
+          other.goal == this.goal &&
+          other.basis == this.basis &&
+          other.fromAmount == this.fromAmount &&
+          other.toAmount == this.toAmount &&
+          other.fromKcal == this.fromKcal &&
+          other.toKcal == this.toKcal &&
+          other.fromSugar == this.fromSugar &&
+          other.toSugar == this.toSugar &&
+          other.fromProtein == this.fromProtein &&
+          other.toProtein == this.toProtein &&
+          other.fromFat == this.fromFat &&
+          other.toFat == this.toFat &&
+          other.fromSalt == this.fromSalt &&
+          other.toSalt == this.toSalt &&
+          other.eventDate == this.eventDate &&
+          other.createdAt == this.createdAt);
+}
+
+class SwapEventsCompanion extends UpdateCompanion<SwapEventRow> {
+  final Value<int> id;
+  final Value<String> fromBarcode;
+  final Value<String> fromName;
+  final Value<String> toBarcode;
+  final Value<String> toName;
+  final Value<String> goal;
+  final Value<String> basis;
+  final Value<double> fromAmount;
+  final Value<double> toAmount;
+  final Value<double?> fromKcal;
+  final Value<double?> toKcal;
+  final Value<double?> fromSugar;
+  final Value<double?> toSugar;
+  final Value<double?> fromProtein;
+  final Value<double?> toProtein;
+  final Value<double?> fromFat;
+  final Value<double?> toFat;
+  final Value<double?> fromSalt;
+  final Value<double?> toSalt;
+  final Value<DateTime> eventDate;
+  final Value<DateTime> createdAt;
+  const SwapEventsCompanion({
+    this.id = const Value.absent(),
+    this.fromBarcode = const Value.absent(),
+    this.fromName = const Value.absent(),
+    this.toBarcode = const Value.absent(),
+    this.toName = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.basis = const Value.absent(),
+    this.fromAmount = const Value.absent(),
+    this.toAmount = const Value.absent(),
+    this.fromKcal = const Value.absent(),
+    this.toKcal = const Value.absent(),
+    this.fromSugar = const Value.absent(),
+    this.toSugar = const Value.absent(),
+    this.fromProtein = const Value.absent(),
+    this.toProtein = const Value.absent(),
+    this.fromFat = const Value.absent(),
+    this.toFat = const Value.absent(),
+    this.fromSalt = const Value.absent(),
+    this.toSalt = const Value.absent(),
+    this.eventDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  SwapEventsCompanion.insert({
+    this.id = const Value.absent(),
+    required String fromBarcode,
+    required String fromName,
+    required String toBarcode,
+    required String toName,
+    required String goal,
+    required String basis,
+    required double fromAmount,
+    required double toAmount,
+    this.fromKcal = const Value.absent(),
+    this.toKcal = const Value.absent(),
+    this.fromSugar = const Value.absent(),
+    this.toSugar = const Value.absent(),
+    this.fromProtein = const Value.absent(),
+    this.toProtein = const Value.absent(),
+    this.fromFat = const Value.absent(),
+    this.toFat = const Value.absent(),
+    this.fromSalt = const Value.absent(),
+    this.toSalt = const Value.absent(),
+    required DateTime eventDate,
+    this.createdAt = const Value.absent(),
+  })  : fromBarcode = Value(fromBarcode),
+        fromName = Value(fromName),
+        toBarcode = Value(toBarcode),
+        toName = Value(toName),
+        goal = Value(goal),
+        basis = Value(basis),
+        fromAmount = Value(fromAmount),
+        toAmount = Value(toAmount),
+        eventDate = Value(eventDate);
+  static Insertable<SwapEventRow> custom({
+    Expression<int>? id,
+    Expression<String>? fromBarcode,
+    Expression<String>? fromName,
+    Expression<String>? toBarcode,
+    Expression<String>? toName,
+    Expression<String>? goal,
+    Expression<String>? basis,
+    Expression<double>? fromAmount,
+    Expression<double>? toAmount,
+    Expression<double>? fromKcal,
+    Expression<double>? toKcal,
+    Expression<double>? fromSugar,
+    Expression<double>? toSugar,
+    Expression<double>? fromProtein,
+    Expression<double>? toProtein,
+    Expression<double>? fromFat,
+    Expression<double>? toFat,
+    Expression<double>? fromSalt,
+    Expression<double>? toSalt,
+    Expression<DateTime>? eventDate,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (fromBarcode != null) 'from_barcode': fromBarcode,
+      if (fromName != null) 'from_name': fromName,
+      if (toBarcode != null) 'to_barcode': toBarcode,
+      if (toName != null) 'to_name': toName,
+      if (goal != null) 'goal': goal,
+      if (basis != null) 'basis': basis,
+      if (fromAmount != null) 'from_amount': fromAmount,
+      if (toAmount != null) 'to_amount': toAmount,
+      if (fromKcal != null) 'from_kcal': fromKcal,
+      if (toKcal != null) 'to_kcal': toKcal,
+      if (fromSugar != null) 'from_sugar': fromSugar,
+      if (toSugar != null) 'to_sugar': toSugar,
+      if (fromProtein != null) 'from_protein': fromProtein,
+      if (toProtein != null) 'to_protein': toProtein,
+      if (fromFat != null) 'from_fat': fromFat,
+      if (toFat != null) 'to_fat': toFat,
+      if (fromSalt != null) 'from_salt': fromSalt,
+      if (toSalt != null) 'to_salt': toSalt,
+      if (eventDate != null) 'event_date': eventDate,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  SwapEventsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? fromBarcode,
+      Value<String>? fromName,
+      Value<String>? toBarcode,
+      Value<String>? toName,
+      Value<String>? goal,
+      Value<String>? basis,
+      Value<double>? fromAmount,
+      Value<double>? toAmount,
+      Value<double?>? fromKcal,
+      Value<double?>? toKcal,
+      Value<double?>? fromSugar,
+      Value<double?>? toSugar,
+      Value<double?>? fromProtein,
+      Value<double?>? toProtein,
+      Value<double?>? fromFat,
+      Value<double?>? toFat,
+      Value<double?>? fromSalt,
+      Value<double?>? toSalt,
+      Value<DateTime>? eventDate,
+      Value<DateTime>? createdAt}) {
+    return SwapEventsCompanion(
+      id: id ?? this.id,
+      fromBarcode: fromBarcode ?? this.fromBarcode,
+      fromName: fromName ?? this.fromName,
+      toBarcode: toBarcode ?? this.toBarcode,
+      toName: toName ?? this.toName,
+      goal: goal ?? this.goal,
+      basis: basis ?? this.basis,
+      fromAmount: fromAmount ?? this.fromAmount,
+      toAmount: toAmount ?? this.toAmount,
+      fromKcal: fromKcal ?? this.fromKcal,
+      toKcal: toKcal ?? this.toKcal,
+      fromSugar: fromSugar ?? this.fromSugar,
+      toSugar: toSugar ?? this.toSugar,
+      fromProtein: fromProtein ?? this.fromProtein,
+      toProtein: toProtein ?? this.toProtein,
+      fromFat: fromFat ?? this.fromFat,
+      toFat: toFat ?? this.toFat,
+      fromSalt: fromSalt ?? this.fromSalt,
+      toSalt: toSalt ?? this.toSalt,
+      eventDate: eventDate ?? this.eventDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (fromBarcode.present) {
+      map['from_barcode'] = Variable<String>(fromBarcode.value);
+    }
+    if (fromName.present) {
+      map['from_name'] = Variable<String>(fromName.value);
+    }
+    if (toBarcode.present) {
+      map['to_barcode'] = Variable<String>(toBarcode.value);
+    }
+    if (toName.present) {
+      map['to_name'] = Variable<String>(toName.value);
+    }
+    if (goal.present) {
+      map['goal'] = Variable<String>(goal.value);
+    }
+    if (basis.present) {
+      map['basis'] = Variable<String>(basis.value);
+    }
+    if (fromAmount.present) {
+      map['from_amount'] = Variable<double>(fromAmount.value);
+    }
+    if (toAmount.present) {
+      map['to_amount'] = Variable<double>(toAmount.value);
+    }
+    if (fromKcal.present) {
+      map['from_kcal'] = Variable<double>(fromKcal.value);
+    }
+    if (toKcal.present) {
+      map['to_kcal'] = Variable<double>(toKcal.value);
+    }
+    if (fromSugar.present) {
+      map['from_sugar'] = Variable<double>(fromSugar.value);
+    }
+    if (toSugar.present) {
+      map['to_sugar'] = Variable<double>(toSugar.value);
+    }
+    if (fromProtein.present) {
+      map['from_protein'] = Variable<double>(fromProtein.value);
+    }
+    if (toProtein.present) {
+      map['to_protein'] = Variable<double>(toProtein.value);
+    }
+    if (fromFat.present) {
+      map['from_fat'] = Variable<double>(fromFat.value);
+    }
+    if (toFat.present) {
+      map['to_fat'] = Variable<double>(toFat.value);
+    }
+    if (fromSalt.present) {
+      map['from_salt'] = Variable<double>(fromSalt.value);
+    }
+    if (toSalt.present) {
+      map['to_salt'] = Variable<double>(toSalt.value);
+    }
+    if (eventDate.present) {
+      map['event_date'] = Variable<DateTime>(eventDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SwapEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('fromBarcode: $fromBarcode, ')
+          ..write('fromName: $fromName, ')
+          ..write('toBarcode: $toBarcode, ')
+          ..write('toName: $toName, ')
+          ..write('goal: $goal, ')
+          ..write('basis: $basis, ')
+          ..write('fromAmount: $fromAmount, ')
+          ..write('toAmount: $toAmount, ')
+          ..write('fromKcal: $fromKcal, ')
+          ..write('toKcal: $toKcal, ')
+          ..write('fromSugar: $fromSugar, ')
+          ..write('toSugar: $toSugar, ')
+          ..write('fromProtein: $fromProtein, ')
+          ..write('toProtein: $toProtein, ')
+          ..write('fromFat: $fromFat, ')
+          ..write('toFat: $toFat, ')
+          ..write('fromSalt: $fromSalt, ')
+          ..write('toSalt: $toSalt, ')
+          ..write('eventDate: $eventDate, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2358,6 +3454,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FavoriteProductsTable favoriteProducts =
       $FavoriteProductsTable(this);
   late final $SwapFeedbacksTable swapFeedbacks = $SwapFeedbacksTable(this);
+  late final $SwapEventsTable swapEvents = $SwapEventsTable(this);
   late final $RecipesTable recipes = $RecipesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -2369,6 +3466,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         cachedProducts,
         favoriteProducts,
         swapFeedbacks,
+        swapEvents,
         recipes
       ];
 }
@@ -3247,6 +4345,10 @@ typedef $$SwapFeedbacksTableCreateCompanionBuilder = SwapFeedbacksCompanion
   required String fromBarcode,
   required String toBarcode,
   required bool positive,
+  Value<String?> goal,
+  Value<String> scope,
+  Value<String> reasonsJson,
+  Value<String?> note,
   Value<DateTime> createdAt,
 });
 typedef $$SwapFeedbacksTableUpdateCompanionBuilder = SwapFeedbacksCompanion
@@ -3255,6 +4357,10 @@ typedef $$SwapFeedbacksTableUpdateCompanionBuilder = SwapFeedbacksCompanion
   Value<String> fromBarcode,
   Value<String> toBarcode,
   Value<bool> positive,
+  Value<String?> goal,
+  Value<String> scope,
+  Value<String> reasonsJson,
+  Value<String?> note,
   Value<DateTime> createdAt,
 });
 
@@ -3278,6 +4384,18 @@ class $$SwapFeedbacksTableFilterComposer
 
   ColumnFilters<bool> get positive => $composableBuilder(
       column: $table.positive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get goal => $composableBuilder(
+      column: $table.goal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get scope => $composableBuilder(
+      column: $table.scope, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reasonsJson => $composableBuilder(
+      column: $table.reasonsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -3304,6 +4422,18 @@ class $$SwapFeedbacksTableOrderingComposer
   ColumnOrderings<bool> get positive => $composableBuilder(
       column: $table.positive, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get goal => $composableBuilder(
+      column: $table.goal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get scope => $composableBuilder(
+      column: $table.scope, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reasonsJson => $composableBuilder(
+      column: $table.reasonsJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
@@ -3328,6 +4458,18 @@ class $$SwapFeedbacksTableAnnotationComposer
 
   GeneratedColumn<bool> get positive =>
       $composableBuilder(column: $table.positive, builder: (column) => column);
+
+  GeneratedColumn<String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumn<String> get scope =>
+      $composableBuilder(column: $table.scope, builder: (column) => column);
+
+  GeneratedColumn<String> get reasonsJson => $composableBuilder(
+      column: $table.reasonsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3363,6 +4505,10 @@ class $$SwapFeedbacksTableTableManager extends RootTableManager<
             Value<String> fromBarcode = const Value.absent(),
             Value<String> toBarcode = const Value.absent(),
             Value<bool> positive = const Value.absent(),
+            Value<String?> goal = const Value.absent(),
+            Value<String> scope = const Value.absent(),
+            Value<String> reasonsJson = const Value.absent(),
+            Value<String?> note = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               SwapFeedbacksCompanion(
@@ -3370,6 +4516,10 @@ class $$SwapFeedbacksTableTableManager extends RootTableManager<
             fromBarcode: fromBarcode,
             toBarcode: toBarcode,
             positive: positive,
+            goal: goal,
+            scope: scope,
+            reasonsJson: reasonsJson,
+            note: note,
             createdAt: createdAt,
           ),
           createCompanionCallback: ({
@@ -3377,6 +4527,10 @@ class $$SwapFeedbacksTableTableManager extends RootTableManager<
             required String fromBarcode,
             required String toBarcode,
             required bool positive,
+            Value<String?> goal = const Value.absent(),
+            Value<String> scope = const Value.absent(),
+            Value<String> reasonsJson = const Value.absent(),
+            Value<String?> note = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               SwapFeedbacksCompanion.insert(
@@ -3384,6 +4538,10 @@ class $$SwapFeedbacksTableTableManager extends RootTableManager<
             fromBarcode: fromBarcode,
             toBarcode: toBarcode,
             positive: positive,
+            goal: goal,
+            scope: scope,
+            reasonsJson: reasonsJson,
+            note: note,
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0
@@ -3407,6 +4565,411 @@ typedef $$SwapFeedbacksTableProcessedTableManager = ProcessedTableManager<
       BaseReferences<_$AppDatabase, $SwapFeedbacksTable, SwapFeedbackRow>
     ),
     SwapFeedbackRow,
+    PrefetchHooks Function()>;
+typedef $$SwapEventsTableCreateCompanionBuilder = SwapEventsCompanion Function({
+  Value<int> id,
+  required String fromBarcode,
+  required String fromName,
+  required String toBarcode,
+  required String toName,
+  required String goal,
+  required String basis,
+  required double fromAmount,
+  required double toAmount,
+  Value<double?> fromKcal,
+  Value<double?> toKcal,
+  Value<double?> fromSugar,
+  Value<double?> toSugar,
+  Value<double?> fromProtein,
+  Value<double?> toProtein,
+  Value<double?> fromFat,
+  Value<double?> toFat,
+  Value<double?> fromSalt,
+  Value<double?> toSalt,
+  required DateTime eventDate,
+  Value<DateTime> createdAt,
+});
+typedef $$SwapEventsTableUpdateCompanionBuilder = SwapEventsCompanion Function({
+  Value<int> id,
+  Value<String> fromBarcode,
+  Value<String> fromName,
+  Value<String> toBarcode,
+  Value<String> toName,
+  Value<String> goal,
+  Value<String> basis,
+  Value<double> fromAmount,
+  Value<double> toAmount,
+  Value<double?> fromKcal,
+  Value<double?> toKcal,
+  Value<double?> fromSugar,
+  Value<double?> toSugar,
+  Value<double?> fromProtein,
+  Value<double?> toProtein,
+  Value<double?> fromFat,
+  Value<double?> toFat,
+  Value<double?> fromSalt,
+  Value<double?> toSalt,
+  Value<DateTime> eventDate,
+  Value<DateTime> createdAt,
+});
+
+class $$SwapEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $SwapEventsTable> {
+  $$SwapEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fromBarcode => $composableBuilder(
+      column: $table.fromBarcode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fromName => $composableBuilder(
+      column: $table.fromName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get toBarcode => $composableBuilder(
+      column: $table.toBarcode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get toName => $composableBuilder(
+      column: $table.toName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get goal => $composableBuilder(
+      column: $table.goal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get basis => $composableBuilder(
+      column: $table.basis, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fromAmount => $composableBuilder(
+      column: $table.fromAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get toAmount => $composableBuilder(
+      column: $table.toAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fromKcal => $composableBuilder(
+      column: $table.fromKcal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get toKcal => $composableBuilder(
+      column: $table.toKcal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fromSugar => $composableBuilder(
+      column: $table.fromSugar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get toSugar => $composableBuilder(
+      column: $table.toSugar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fromProtein => $composableBuilder(
+      column: $table.fromProtein, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get toProtein => $composableBuilder(
+      column: $table.toProtein, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fromFat => $composableBuilder(
+      column: $table.fromFat, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get toFat => $composableBuilder(
+      column: $table.toFat, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fromSalt => $composableBuilder(
+      column: $table.fromSalt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get toSalt => $composableBuilder(
+      column: $table.toSalt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get eventDate => $composableBuilder(
+      column: $table.eventDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SwapEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SwapEventsTable> {
+  $$SwapEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fromBarcode => $composableBuilder(
+      column: $table.fromBarcode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fromName => $composableBuilder(
+      column: $table.fromName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get toBarcode => $composableBuilder(
+      column: $table.toBarcode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get toName => $composableBuilder(
+      column: $table.toName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get goal => $composableBuilder(
+      column: $table.goal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get basis => $composableBuilder(
+      column: $table.basis, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fromAmount => $composableBuilder(
+      column: $table.fromAmount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get toAmount => $composableBuilder(
+      column: $table.toAmount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fromKcal => $composableBuilder(
+      column: $table.fromKcal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get toKcal => $composableBuilder(
+      column: $table.toKcal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fromSugar => $composableBuilder(
+      column: $table.fromSugar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get toSugar => $composableBuilder(
+      column: $table.toSugar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fromProtein => $composableBuilder(
+      column: $table.fromProtein, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get toProtein => $composableBuilder(
+      column: $table.toProtein, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fromFat => $composableBuilder(
+      column: $table.fromFat, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get toFat => $composableBuilder(
+      column: $table.toFat, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fromSalt => $composableBuilder(
+      column: $table.fromSalt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get toSalt => $composableBuilder(
+      column: $table.toSalt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get eventDate => $composableBuilder(
+      column: $table.eventDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SwapEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SwapEventsTable> {
+  $$SwapEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get fromBarcode => $composableBuilder(
+      column: $table.fromBarcode, builder: (column) => column);
+
+  GeneratedColumn<String> get fromName =>
+      $composableBuilder(column: $table.fromName, builder: (column) => column);
+
+  GeneratedColumn<String> get toBarcode =>
+      $composableBuilder(column: $table.toBarcode, builder: (column) => column);
+
+  GeneratedColumn<String> get toName =>
+      $composableBuilder(column: $table.toName, builder: (column) => column);
+
+  GeneratedColumn<String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumn<String> get basis =>
+      $composableBuilder(column: $table.basis, builder: (column) => column);
+
+  GeneratedColumn<double> get fromAmount => $composableBuilder(
+      column: $table.fromAmount, builder: (column) => column);
+
+  GeneratedColumn<double> get toAmount =>
+      $composableBuilder(column: $table.toAmount, builder: (column) => column);
+
+  GeneratedColumn<double> get fromKcal =>
+      $composableBuilder(column: $table.fromKcal, builder: (column) => column);
+
+  GeneratedColumn<double> get toKcal =>
+      $composableBuilder(column: $table.toKcal, builder: (column) => column);
+
+  GeneratedColumn<double> get fromSugar =>
+      $composableBuilder(column: $table.fromSugar, builder: (column) => column);
+
+  GeneratedColumn<double> get toSugar =>
+      $composableBuilder(column: $table.toSugar, builder: (column) => column);
+
+  GeneratedColumn<double> get fromProtein => $composableBuilder(
+      column: $table.fromProtein, builder: (column) => column);
+
+  GeneratedColumn<double> get toProtein =>
+      $composableBuilder(column: $table.toProtein, builder: (column) => column);
+
+  GeneratedColumn<double> get fromFat =>
+      $composableBuilder(column: $table.fromFat, builder: (column) => column);
+
+  GeneratedColumn<double> get toFat =>
+      $composableBuilder(column: $table.toFat, builder: (column) => column);
+
+  GeneratedColumn<double> get fromSalt =>
+      $composableBuilder(column: $table.fromSalt, builder: (column) => column);
+
+  GeneratedColumn<double> get toSalt =>
+      $composableBuilder(column: $table.toSalt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get eventDate =>
+      $composableBuilder(column: $table.eventDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$SwapEventsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SwapEventsTable,
+    SwapEventRow,
+    $$SwapEventsTableFilterComposer,
+    $$SwapEventsTableOrderingComposer,
+    $$SwapEventsTableAnnotationComposer,
+    $$SwapEventsTableCreateCompanionBuilder,
+    $$SwapEventsTableUpdateCompanionBuilder,
+    (
+      SwapEventRow,
+      BaseReferences<_$AppDatabase, $SwapEventsTable, SwapEventRow>
+    ),
+    SwapEventRow,
+    PrefetchHooks Function()> {
+  $$SwapEventsTableTableManager(_$AppDatabase db, $SwapEventsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SwapEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SwapEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SwapEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> fromBarcode = const Value.absent(),
+            Value<String> fromName = const Value.absent(),
+            Value<String> toBarcode = const Value.absent(),
+            Value<String> toName = const Value.absent(),
+            Value<String> goal = const Value.absent(),
+            Value<String> basis = const Value.absent(),
+            Value<double> fromAmount = const Value.absent(),
+            Value<double> toAmount = const Value.absent(),
+            Value<double?> fromKcal = const Value.absent(),
+            Value<double?> toKcal = const Value.absent(),
+            Value<double?> fromSugar = const Value.absent(),
+            Value<double?> toSugar = const Value.absent(),
+            Value<double?> fromProtein = const Value.absent(),
+            Value<double?> toProtein = const Value.absent(),
+            Value<double?> fromFat = const Value.absent(),
+            Value<double?> toFat = const Value.absent(),
+            Value<double?> fromSalt = const Value.absent(),
+            Value<double?> toSalt = const Value.absent(),
+            Value<DateTime> eventDate = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              SwapEventsCompanion(
+            id: id,
+            fromBarcode: fromBarcode,
+            fromName: fromName,
+            toBarcode: toBarcode,
+            toName: toName,
+            goal: goal,
+            basis: basis,
+            fromAmount: fromAmount,
+            toAmount: toAmount,
+            fromKcal: fromKcal,
+            toKcal: toKcal,
+            fromSugar: fromSugar,
+            toSugar: toSugar,
+            fromProtein: fromProtein,
+            toProtein: toProtein,
+            fromFat: fromFat,
+            toFat: toFat,
+            fromSalt: fromSalt,
+            toSalt: toSalt,
+            eventDate: eventDate,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String fromBarcode,
+            required String fromName,
+            required String toBarcode,
+            required String toName,
+            required String goal,
+            required String basis,
+            required double fromAmount,
+            required double toAmount,
+            Value<double?> fromKcal = const Value.absent(),
+            Value<double?> toKcal = const Value.absent(),
+            Value<double?> fromSugar = const Value.absent(),
+            Value<double?> toSugar = const Value.absent(),
+            Value<double?> fromProtein = const Value.absent(),
+            Value<double?> toProtein = const Value.absent(),
+            Value<double?> fromFat = const Value.absent(),
+            Value<double?> toFat = const Value.absent(),
+            Value<double?> fromSalt = const Value.absent(),
+            Value<double?> toSalt = const Value.absent(),
+            required DateTime eventDate,
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              SwapEventsCompanion.insert(
+            id: id,
+            fromBarcode: fromBarcode,
+            fromName: fromName,
+            toBarcode: toBarcode,
+            toName: toName,
+            goal: goal,
+            basis: basis,
+            fromAmount: fromAmount,
+            toAmount: toAmount,
+            fromKcal: fromKcal,
+            toKcal: toKcal,
+            fromSugar: fromSugar,
+            toSugar: toSugar,
+            fromProtein: fromProtein,
+            toProtein: toProtein,
+            fromFat: fromFat,
+            toFat: toFat,
+            fromSalt: fromSalt,
+            toSalt: toSalt,
+            eventDate: eventDate,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SwapEventsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SwapEventsTable,
+    SwapEventRow,
+    $$SwapEventsTableFilterComposer,
+    $$SwapEventsTableOrderingComposer,
+    $$SwapEventsTableAnnotationComposer,
+    $$SwapEventsTableCreateCompanionBuilder,
+    $$SwapEventsTableUpdateCompanionBuilder,
+    (
+      SwapEventRow,
+      BaseReferences<_$AppDatabase, $SwapEventsTable, SwapEventRow>
+    ),
+    SwapEventRow,
     PrefetchHooks Function()>;
 typedef $$RecipesTableCreateCompanionBuilder = RecipesCompanion Function({
   Value<int> id,
@@ -3566,6 +5129,8 @@ class $AppDatabaseManager {
       $$FavoriteProductsTableTableManager(_db, _db.favoriteProducts);
   $$SwapFeedbacksTableTableManager get swapFeedbacks =>
       $$SwapFeedbacksTableTableManager(_db, _db.swapFeedbacks);
+  $$SwapEventsTableTableManager get swapEvents =>
+      $$SwapEventsTableTableManager(_db, _db.swapEvents);
   $$RecipesTableTableManager get recipes =>
       $$RecipesTableTableManager(_db, _db.recipes);
 }

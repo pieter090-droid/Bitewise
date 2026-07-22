@@ -30,6 +30,7 @@ class SettingsController {
       await db.delete(db.dayLogs).go();
       await db.delete(db.favoriteProducts).go();
       await db.delete(db.swapFeedbacks).go();
+      await db.delete(db.swapEvents).go();
       await db.delete(db.cachedProducts).go();
     });
   }
@@ -41,6 +42,7 @@ class SettingsController {
       await db.delete(db.dayLogs).go();
       await db.delete(db.favoriteProducts).go();
       await db.delete(db.swapFeedbacks).go();
+      await db.delete(db.swapEvents).go();
       await db.delete(db.cachedProducts).go();
       await db.delete(db.userGoals).go();
     });
